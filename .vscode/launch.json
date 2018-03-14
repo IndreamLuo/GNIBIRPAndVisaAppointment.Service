@@ -2,10 +2,22 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Attach to C# Functions",
+      "name": ".NET Core Attach",
       "type": "coreclr",
       "request": "attach",
-      "processId": "${command:azureFunctions.pickProcess}"
+      "processId": "${command:pickProcess}"
+    },
+    {
+      "name": "Attach to Azure Functions",
+      "type": "node",
+      "request": "attach",
+      "port": 5858
+    },
+    {
+      "name": "Attach to Azure Functions (Java)",
+      "type": "java",
+      "request": "attach",
+      "port": 5005
     }
   ]
 }
