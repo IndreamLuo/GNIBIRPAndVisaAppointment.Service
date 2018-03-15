@@ -11,6 +11,14 @@
       "name": "$return",
       "type": "http",
       "direction": "out"
+    },
+    {
+      "type": "apiHubTable",
+      "name": "subscriptions",
+      "dataSetName": "default",
+      "tableName": "Subscription",
+      "connection": "sql_SQL",
+      "direction": "out"
     }
   ]
 }
