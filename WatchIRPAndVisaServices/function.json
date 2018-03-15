@@ -1,0 +1,38 @@
+{
+  "disabled": false,
+  "bindings": [
+    {
+      "type": "timerTrigger",
+      "name": "Timer",
+      "schedule": "0 */5 * * * *",
+      "direction": "in"
+    },
+    {
+      "name": "lastAppointments",
+      "type": "documentdb",
+      "direction": "in",
+      "databaseName": "GNIBIRPAndVisaAppointment",
+      "collectionName": "LastAppointments",
+      "sqlQuery": "SELECT * from c",
+      "connection": "CosmosDBConnection"
+    },
+    {
+      "name": "newAppointments",
+      "type": "documentDB",
+      "databaseName": "GNIBIRPAndVisaAppointment",
+      "collectionName": "LastAppointments",
+      "createIfNotExists": true,
+      "connection": "CosmosDBConnection",     
+      "direction": "out"
+    },
+    {
+      "name": "$return",
+      "type": "documentDB",
+      "databaseName": "GNIBIRPAndVisaAppointment",
+      "collectionName": "Appointments",
+      "createIfNotExists": true,
+      "connection": "CosmosDBConnection",     
+      "direction": "out"
+    }
+  ]
+}

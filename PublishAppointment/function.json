@@ -5,7 +5,11 @@
       "authLevel": "function",
       "name": "req",
       "type": "httpTrigger",
-      "direction": "in"
+      "direction": "in",
+      "route": "PublishAppointment/name/{name}",
+      "methods": [
+        "get"
+      ]
     },
     {
       "name": "$return",

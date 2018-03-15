@@ -1,21 +1,31 @@
-#r "Newtonsoft.Json"
+#r "Twilio.Api"
+
+using Twilio;
 
 using System.Net;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json;
 
-public static IActionResult Run(HttpRequest req, TraceWriter log)
+public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, IAsyncCollector<SMSMessage> messages, TraceWriter log)
 {
-    log.Info("C# HTTP trigger function processed a request.");
+    log.Info("Sent SMS function processed a request.");
 
-    string name = req.Query["name"];
+    var tos = req.GetQueryNameValuePairs()
+        .Where(pair => pair.Key.ToLower() == "to")
+        .Select(pair => pair.Value)
+        .ToArray();
+    log.Info($"To: [{string.Join(", ", tos)}]");
+    var content = await req.Content.ReadAsAsync<string>();
 
-    string requestBody = new StreamReader(req.Body).ReadToEnd();
-    dynamic data = JsonConvert.DeserializeObject(requestBody);
-    name = name ?? data?.name;
+    Task.WaitAll(tos.Select(to => messages.AddAsync(new SMSMessage {
+        To = to,
+        Body = content
+    })).ToArray());
 
-    return name != null
-        ? (ActionResult)new OkObjectResult($"Hello, {name}")
-        : new BadRequestObjectResult("Please pass a name on the query string or in the request body");
+    log.Info("Sent SMS function finished.");
+
+    return req.CreateResponse(HttpStatusCode.OK, "Sent.");
+}
+
+public static string GetEnvironmentVariable(string name)
+{
+    return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
 }
