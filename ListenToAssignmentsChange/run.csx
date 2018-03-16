@@ -43,7 +43,7 @@ public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log,
                             Type = appointment.Type,
                             Category = appointment.Category,
                             SubCategory = appointment.SubCategory,
-                            Time = DateTime.Parse(time),
+                            Time = DateTime.Parse(time.ToString()),
                             Expiration = appointment.Expirations[index] == null ? null : DateTime.Parse(appointment.Expirations[index])
                         };
                     });
@@ -64,7 +64,7 @@ public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log,
                             Type = appointment.Type,
                             Category = appointment.Category,
                             SubCategory = appointment.SubCategory,
-                            Time = DateTime.Parse(time),
+                            Time = DateTime.Parse(time.ToString()),
                             Expiration = appointment.Expirations[index] == null ? null : DateTime.Parse(appointment.Expirations[index])
                         };
                     });
@@ -74,7 +74,7 @@ public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log,
 
         foreach (var option in updatedOptions)
         {
-            log.Info($"{option.Type}{option.Category}{option.SubCategory}{option.Time}{option.Expiration}");
+            log.Info($"Option: {option.Type}/{option.Category}/{option.SubCategory} {option.Time}-{option.Expiration}");
         }
     }
 }
