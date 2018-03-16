@@ -320,15 +320,17 @@ public static bool IsDifferentAppointments(TraceWriter log, dynamic newAppointme
             return true;
         }
 
-        var newTimes = (newAppointment.Times as IEnumerable<object>)
-            .Select(time => time.ToString())
-            .ToArray();
-        var lastTimes = (lastAppointment.Times as IEnumerable<object>)
-            .Select(time => time.ToString())
-            .ToArray();
-
         log.Info("Check times.");
 
+        var newTimes = (newAppointment.TimeRanges as IEnumerable<TimeRange>)
+            .Select(timeRange => timeRange.Time.ToString())
+            .ToArray();
+        var lastTimes = (lastAppointment.TimeRanges as IEnumerable<object>)
+            .Cast<dynamic>()
+            .Select(timeRange => timeRange.Time.ToString())
+            .ToArray();
+
+        log.Info($"new({newTimes.Length}) : old({lastTimes.Length})");
         if (newTimes.Length != lastTimes.Length)
         {
             log.Info($"Count difference between new times({newTimes.Length}) and last times({lastTimes.Length}).");
