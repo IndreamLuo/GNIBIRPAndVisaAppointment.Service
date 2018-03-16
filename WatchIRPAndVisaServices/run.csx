@@ -178,19 +178,19 @@ public static API[] APIs = new []
     new API
     {
         Type = "Visa",
-        URL = "https://reentryvisa.inis.gov.ie/website/INISOA/IOA.nsf/(getDTAvail)?openagent&type=I",
         Category = "Individual",
+        URL = "https://reentryvisa.inis.gov.ie/website/INISOA/IOA.nsf/(getDTAvail)?openagent&type=I",
     },
     new API
     {
         Type = "Visa",
-        URL = "https://reentryvisa.inis.gov.ie/website/INISOA/IOA.nsf/(getDTAvail)?openagent&type=F",
         Category = "Family",
+        URL = "https://reentryvisa.inis.gov.ie/website/INISOA/IOA.nsf/(getDTAvail)?openagent&type=F",
     },
     new API
     {
-        Category = "Visa",
-        Type = "Emergency",
+        Type = "Visa",
+        Category = "Emergency",
         Data = new
         {
             dates = new []
