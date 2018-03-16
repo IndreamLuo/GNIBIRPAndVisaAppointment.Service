@@ -8,7 +8,7 @@ public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log,
     log.Info("Start");
     var newAppointments = lastTwoAppointments.First();
     var lastAppointments = lastTwoAppointments.Skip(1).FirstOrDefault();
-
+    
     if (documents != null && documents.Count > 0 && documents[0].Id == newAppointments.Id)
     {
         log.Info("Last appointments update is triggered.");
@@ -76,6 +76,11 @@ public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log,
         {
             log.Info($"Option: {option.Type}/{option.Category}/{option.SubCategory} {option.Time}-{option.Expiration}");
         }
+    }
+    else
+    {
+        log.Info("No updates.");
+        log.Info($"documents != null({documents != null}), documents.Count > 0({documents.Count > 0}), documents[0].Id({documents[0].Id}) == newAppointments.Id({newAppointments.Id})({documents[0].Id == newAppointments.Id})");
     }
 }
 
