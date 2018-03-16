@@ -95,9 +95,13 @@ public static object Run(TimerInfo Timer, TraceWriter log, IEnumerable<dynamic> 
         }
 
         log.Info("Watch IRP And Visa Services function finished.");
-        return IsDifferentAppointments(log, newAppointments, lastAppointments.FirstOrDefault())
-        ? newAppointments
-        : null;
+        var lastAppointment = lastAppointments.FirstOrDefault();
+        if (IsDifferentAppointments(log, newAppointments, lastAppointment))
+        {
+            return newAppointments;
+        }
+
+        return null;
     }
 }
 
@@ -270,8 +274,9 @@ public static bool IsDifferentAppointments(TraceWriter log, dynamic newAppointme
     log.Info("Check with last appointments.");
     log.Info("Checking count.");
     log.Info($"new({newAppointments.Appointments.Count}) : old({lastAppointments?.Appointments?.Count ?? -1})");
-    if (newAppointments.Appointments.Count != lastAppointments?.Appointments?.Count ?? -1)
+    if (newAppointments.Appointments.Count != (lastAppointments?.Appointments?.Count ?? -1))
     {
+        log.Info("Counts are different.");
         return true;
     }
 
