@@ -47,10 +47,9 @@ public static object Run(TimerInfo Timer, TraceWriter log, IEnumerable<dynamic> 
                 Type = api.Type,
                 Category = api.Category,
                 SubCategory = api.SubCategory,
-                Times = new List<object>(),
-                Expirations = new List<object>()
+                TimeRanges = new List<TimeRange>()
             };
-            object expiration;
+            
             var anyTime = false;
             switch (api.Type)
             {
@@ -59,9 +58,8 @@ public static object Run(TimerInfo Timer, TraceWriter log, IEnumerable<dynamic> 
                     {
                         foreach (var slot in urlResult.slots)
                         {
-                            var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString(), out expiration);
-                            appointment.Times.Add(time);
-                            appointment.Expirations.Add(expiration);
+                            var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
+                            appointment.TimeRanges.Add(time);
                             anyTime = true;
                         }
                     }
@@ -77,9 +75,8 @@ public static object Run(TimerInfo Timer, TraceWriter log, IEnumerable<dynamic> 
                             {
                                 foreach (var slot in subUrlResult.slots)
                                 {
-                                    var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString(), out expiration);
-                                    appointment.Times.Add(time);
-                                    appointment.Expirations.Add(expiration);
+                                    var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
+                                    appointment.TimeRanges.Add(time);
                                     anyTime = true;
                                 }
                             }
@@ -112,8 +109,15 @@ public class Appointment
     public string Type { get; set; }
     public string Category { get; set; }
     public string SubCategory { get; set; }
-    public List<object> Times { get; set; }
-    public List<object> Expirations { get; set; }
+    public List<TimeRange> TimeRanges { get; set; }
+}
+
+
+
+public class TimeRange
+{
+    public object Time { get; set; }
+    public object Expiration { get; set; }
 }
 
 
@@ -193,6 +197,7 @@ public static API[] APIs = new []
         Category = "Emergency",
         Data = new
         {
+            empty = "FALSE",
             dates = new []
             {
                 string.Format($"{DateTime.Now.Day}/{DateTime.Now.Month}/{DateTime.Now.Year}"),
@@ -223,17 +228,17 @@ public static Dictionary<string, int> Months = new Dictionary<string, int>
 
 
 
-public static object ConvertSlotToDateTime(TraceWriter log, string type, string category, string subCategory, string slot, out object expiration)
+public static TimeRange ConvertSlotToDateTime(TraceWriter log, string type, string category, string subCategory, string slot)
 {
-    object result = slot;
-    expiration = null;
+    object time = slot;
+    object expiration = null;
     
     switch (type)
     {
         case "IRP":
             //25 April 2018 - 11:00
             var units = slot.Split(' ', ':');
-            result = new DateTime(Convert.ToInt32(units[2]),
+            time = new DateTime(Convert.ToInt32(units[2]),
                 Months[units[1]],
                 Convert.ToInt32(units[0]),
                 Convert.ToInt32(units[4]),
@@ -249,7 +254,7 @@ public static object ConvertSlotToDateTime(TraceWriter log, string type, string 
             var day = Convert.ToInt32(visaUnits[0]);
             var hour = Convert.ToInt32(visaUnits[3]) % 12 + (visaUnits[5] == "PM" ? 12 : 0);
             var minute = Convert.ToInt32(visaUnits[4]);
-            result = new DateTime(year, month, day, hour, minute, 0);
+            time = new DateTime(year, month, day, hour, minute, 0);
             if (visaUnits.Length > 6)
             {
                 var expiredHour = Convert.ToInt32(visaUnits[7]);
@@ -260,11 +265,15 @@ public static object ConvertSlotToDateTime(TraceWriter log, string type, string 
         
         default:
             log.Info("Unknown appointment type.");
-            result = DateTime.MinValue;
+            time = DateTime.MinValue;
             break;
     }
 
-    return result;
+    return new TimeRange
+    {
+        Time = time,
+        Expiration = expiration
+    };
 }
 
 
