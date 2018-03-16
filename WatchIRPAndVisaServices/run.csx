@@ -6,16 +6,18 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-public static IEnumerable<dynamic> Run(TimerInfo Timer,
-    TraceWriter log,
-    IEnumerable<dynamic> lastAppointments,
-    out IEnumerable<dynamic> newAppointments)
+public static object Run(TimerInfo Timer, TraceWriter log)
 {
     log.Info("Watch IRP And Visa Services function processed a request.");
 
     using (var client = new HttpClient())
     {
-        newAppointments = new List<API>();
+        var now = DateTime.Now;
+        var newAppointments = new
+        {
+            Time = now,
+            Appointments = new List<Appointment>()
+        };
 
         foreach (var api in APIs)
         {
@@ -36,8 +38,17 @@ public static IEnumerable<dynamic> Run(TimerInfo Timer,
                     urlResult = new { error = response.StatusCode };
                 }
             }
-
-            var appointments = new List<DateTime>();
+            
+            var appointment = new Appointment
+            {
+                Type = api.Type,
+                Category = api.Category,
+                SubCategory = api.SubCategory,
+                Times = new List<object>(),
+                Expirations = new List<object>()
+            };
+            object expiration;
+            var anyTime = false;
             switch (api.Type)
             {
                 case "IRP":
@@ -45,24 +56,50 @@ public static IEnumerable<dynamic> Run(TimerInfo Timer,
                     {
                         foreach (var slot in urlResult.slots)
                         {
-                            var validDate = ConvertSlotToDateTime(api.Type, api.Category, api.SubCategory, (slot as object).ToString());
-                            appointments.Add(validDate.Value);
+                            var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString(), out expiration);
+                            appointment.Times.Add(time);
+                            appointment.Expirations.Add(expiration);
+                            anyTime = true;
                         }
                     }
                     break;
                 case "Visa":
+                    if (urlResult.empty != "TRUE" && urlResult.dates != null && urlResult.dates[0] != "01/01/1900")
+                    {
+                        foreach (var date in urlResult.dates)
+                        {
+                            var subUrlResponse = client.GetAsync(string.Format(VisaSubURL, date, api.Category[0], 1)).result;
+                            var subUrlResult = JsonConvert.DeserializeObject(subUrlResponse.Content.ReadAsStringAsync().Result);
+                            foreach (var slot in subUrlResult.slots)
+                            {
+                                var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString(), out expiration);
+                                appointment.Times.Add(time);
+                                appointment.Expirations.Add(expiration);
+                                anyTime = true;
+                            }
+                        }
+                    }
                     break;
             }
-        }
 
-        if (lastAppointments != null && lastAppointments.Any())
-        {
-            
+            if (anyTime)
+            {
+                newAppointments.Appointments.Add(appointment);
+            }
         }
 
         log.Info("Watch IRP And Visa Services function finished.");
         return newAppointments;
     }
+}
+
+public class Appointment
+{
+    public string Type { get; set; }
+    public string Category { get; set; }
+    public string SubCategory { get; set; }
+    public List<object> Times { get; set; }
+    public List<object> Expirations { get; set; }
 }
 
 public class API
@@ -71,9 +108,15 @@ public class API
     public string Category { get; set; }
     public string SubCategory { get; set; }
     public string URL { get; set; }
-    public dynamic Data { get; set; }
+    public object Data { get; set; }
     public string SubURL { get; set; }
 }
+
+// public static string DatabaseAccountName = "GNIBIRPAndVisaAppointment";
+// public static string DatabaseName = "GNIBIRPAndVisaAppointment";
+// public static string CollectionName = "LastAppointment";
+// public static string CosmosCollectionEndpointURL = $"https://{DatabaseAccountName}.documents.azure.com/dbs/{DatabaseName}/colls/{CollectionName}";
+// public static string CosmosAuthorizationKey = GetEnvironmentVariable("CosmosAuthorizationKey");
 
 public static string VisaSubURL = "https://reentryvisa.inis.gov.ie/website/INISOA/IOA.nsf/(getApps4DT)?openagent&dt={0}&type={1}&num={2}";
 public static API[] APIs = new []
@@ -136,7 +179,8 @@ public static API[] APIs = new []
     {
         Category = "Visa",
         Type = "Emergency",
-        Data = {
+        Data = new
+        {
             dates = new []
             {
                 string.Format($"{DateTime.Now.Day}/{DateTime.Now.Month}/{DateTime.Now.Year}"),
@@ -147,14 +191,70 @@ public static API[] APIs = new []
     }
 };
 
-public static DateTime? ConvertSlotToDateTime(string type, string category, string SubCategory, string slot)
+public static Dictionary<string, int> Months = new Dictionary<string, int>
 {
-    DateTime result;
+    {"January", 1},
+    {"February", 2},
+    {"March", 3},
+    {"April", 4},
+    {"May", 5},
+    {"June", 6},
+    {"July", 7},
+    {"Auguest", 8},
+    {"September", 9},
+    {"October", 10},
+    {"November", 11},
+    {"December", 12},
+};
 
-    if (DateTime.TryParse(slot, out result))
+public static object ConvertSlotToDateTime(TraceWriter log, string type, string category, string subCategory, string slot, out object expiration)
+{
+    object result = slot;
+    expiration = null;
+    
+    log.Info($"From: {slot}");
+    switch (type)
     {
-        return null;
+        case "IRP":
+            //25 April 2018 - 11:00
+            var units = slot.Split(' ', ':');
+            result = new DateTime(Convert.ToInt32(units[2]),
+                Months[units[1]],
+                Convert.ToInt32(units[0]),
+                Convert.ToInt32(units[4]),
+                Convert.ToInt32(units[5]),
+                0);
+            break;
+
+        case "Visa":
+            //"18/03/2018 08:30 AM - 12:00 PM"
+            var visaUnits = slot.Split(' ', '/', ':');
+            var year = Convert.ToInt32(visaUnits[2]);
+            var month = Convert.ToInt32(visaUnits[1]);
+            var day = Convert.ToInt32(visaUnits[0]);
+            var hour = Convert.ToInt32(visaUnits[3]) % 12 + (visaUnits[5] == "PM" ? 12 : 0);
+            var minute = Convert.ToInt32(visaUnits[4]);
+            result = new DateTime(year, month, day, hour, minute, 0);
+            if (visaUnits.Length > 6)
+            {
+                var expiredHour = Convert.ToInt32(visaUnits[7]);
+                var expiredMinute = Convert.ToInt32(visaUnits[8]);
+                expiration = new DateTime(year, month, day, expiredHour, expiredMinute, 0);
+            }
+            break;
+        
+        default:
+            log.Info("Unknown appointment type.");
+            result = DateTime.MinValue;
+            break;
     }
 
+    log.Info($"To: {result}");
+    log.Info($"Parse: {DateTime.Parse(result.ToString())}");
     return result;
+}
+
+public static string GetEnvironmentVariable(string name)
+{
+    return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
 }
