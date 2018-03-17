@@ -9,7 +9,7 @@ public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log,
     var newAppointments = lastTwoAppointments.First();
     var lastAppointments = lastTwoAppointments.Skip(1).FirstOrDefault();
     
-    if (documents != null && documents.Count > 0 && documents[0].Id == newAppointments.id)
+    if (documents != null && documents.Count > 0 && documents[0].Id == newAppointments.id.ToString())
     {
         log.Info("Last appointments update is triggered.");
 
