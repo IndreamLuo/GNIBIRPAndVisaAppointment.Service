@@ -1,25 +1,34 @@
+#r "Microsoft.WindowsAzure.Storage"
+using Microsoft.WindowsAzure.Storage.Table;
+
 using System.Net;
 
 public static HttpResponseMessage Run(HttpRequestMessage req,
-    IEnumerable<dynamic> currentSubscriptions,
-    out dynamic newSubscription,
-    TraceWriter log)
+    TraceWriter log,
+    ICollector<Subscription> outputSubscriptions)
 {
     log.Info("Subscribe function processed a request.");
 
-    var queries = req.GetQueryNameValuePairs()
+    var query = req.GetQueryNameValuePairs()
         .GroupBy(pair => pair.Key.ToLower())
         .ToDictionary(group => group.Key, group => group.Select(pair => pair.Value).ToArray());
-    
-    log.Info("Http queries grouped");
-    var subscription = null;
 
-    newSubscription = null;
+    var gcmToken = query["gcmtoken"][0];
+    var category = query["category"][0];
+    var subCategory = query["subcategory"][0];
+    var dateNumbers = query["date"][0].Split('/');
+
+    throw new NotImplementedException();
+
     // Fetching the name from the path parameter in the request URL
-    return req.CreateResponse(HttpStatusCode.OK, "OK");
+    return req.CreateResponse(HttpStatusCode.OK, "Success");
 }
 
-public static string GetEnvironmentVariable(string name)
+
+public class Subscription : TableEntity
 {
-    return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+    public string GCMToken { get; set; }
+    public char Category { get; set; }
+    public char SubCategory { get; set; }
+    public DateTime Date { get; set; }
 }
