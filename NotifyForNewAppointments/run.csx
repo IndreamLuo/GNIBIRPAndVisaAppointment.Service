@@ -21,6 +21,7 @@ public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log,
         var updatedOptions = lastOptions == null ? newOptions : newOptions.Except(lastOptions, new AppointmentOptionComparer()).ToArray();
 
         log.Info("Filterred replicated options.");
+        log.Info($"New valid appointments left({updatedOptions?.Count() ?? 0}).");
         if (updatedOptions != null)
         {
             foreach (var option in updatedOptions)
