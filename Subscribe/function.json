@@ -6,7 +6,7 @@
       "name": "req",
       "type": "httpTrigger",
       "direction": "in",
-      "route": "Subscribe/name/{name}",
+      "route": "Subscribe",
       "methods": [
         "get"
       ]
