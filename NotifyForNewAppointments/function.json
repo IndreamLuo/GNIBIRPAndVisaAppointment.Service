@@ -23,7 +23,7 @@
       "type": "eventHub",
       "name": "newValidAppointmentEventHubMessages",
       "connection": "GNIBIRPAndVisaAppointment_RootManageSharedAccessKey_EVENTHUB",
-      "path": "NewValidAppointment",
+      "path": "newvalidappointment",
       "direction": "out"
     }
   ]
