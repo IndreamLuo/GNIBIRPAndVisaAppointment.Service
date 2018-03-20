@@ -13,6 +13,7 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
     var query = new Queries(req);
 
     var gcmToken = query["gcmtoken"]?[0];
+    var type = query["type"]?[0];
     var category = query["category"]?[0];
     var subCategory = query["subcategory"]?[0];
     
@@ -24,6 +25,7 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
         RowKey = gcmToken,
     };
 
+    newSubscription.Type = type?[0];
     newSubscription.Category = category?[0];
     newSubscription.SubCategory = subCategory?[0];
 
@@ -40,6 +42,7 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
 
 public class Subscription : TableEntity
 {
+    public char? Type { get; set; }
     public char? Category { get; set; }
     public char? SubCategory { get; set; }
 }

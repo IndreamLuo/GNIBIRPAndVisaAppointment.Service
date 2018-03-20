@@ -2,19 +2,19 @@
   "disabled": false,
   "bindings": [
     {
-      "authLevel": "function",
-      "name": "req",
-      "type": "httpTrigger",
-      "direction": "in",
-      "route": "SentGCMDownstreamMessage",
-      "methods": [
-        "post"
-      ]
+      "name": "eventMessage",
+      "type": "eventHubTrigger",
+      "connection": "EventHub",
+      "path": "newvalidappointment",
+      "direction": "in"
     },
     {
-      "name": "$return",
-      "type": "http",
-      "direction": "out"
+      "name": "subscriptions",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "Subscription",
+      "partitionKey": "GCM",
+      "direction": "in"
     }
   ]
 }

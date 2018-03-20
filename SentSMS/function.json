@@ -2,14 +2,19 @@
   "disabled": false,
   "bindings": [
     {
-      "authLevel": "function",
-      "name": "req",
-      "type": "httpTrigger",
-      "direction": "in",
-      "route": "SentSMS",
-      "methods": [
-        "post"
-      ]
+      "name": "eventMessage",
+      "type": "eventHubTrigger",
+      "connection": "EventHub",
+      "path": "newvalidappointment",
+      "direction": "in"
+    },
+    {
+      "name": "subscriptions",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "Subscription",
+      "partitionKey": "GCM",
+      "direction": "in"
     },
     {
       "type": "twilioSms",
@@ -18,11 +23,6 @@
       "authToken": "TwilioAuthToken",
       "direction": "out",
       "body": "Appointment Notification"
-    },
-    {
-      "name": "$return",
-      "type": "http",
-      "direction": "out"
     }
   ]
 }
