@@ -10,15 +10,15 @@ public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, TraceW
 {
     log.Info("Sent GCM Downstream Message function starts.");
 
-    var query = req.GetQueryNameValuePairs()
+    var queries = req.GetQueryNameValuePairs()
         .GroupBy(pair => pair.Key.ToLower())
         .ToDictionary(group => group.Key, group => group.Select(pair => pair.Value).ToArray());
 
-    var title = query["title"][0];
+    var title = queries["title"][0];
     log.Info("Title: " + title);
-    var information = query["information"][0];
+    var information = queries["information"][0];
     log.Info("Information: " + title);
-    var tos = query["to"];
+    var tos = queries["to"];
     log.Info("To: [" + "]");
     var result = await SentGCMDownstreamMessage(title, information, tos, log);
 

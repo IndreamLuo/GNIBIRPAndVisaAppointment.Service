@@ -6,10 +6,28 @@
       "name": "req",
       "type": "httpTrigger",
       "direction": "in",
-      "route": "Subscribe/name/{name}",
+      "route": "Subscribe",
       "methods": [
-        "get"
+        "post"
       ]
+    },
+    {
+      "name": "currentSubscriptions",
+      "type": "documentDB",
+      "databaseName": "GNIBIRPAndVisaAppointment",
+      "collectionName": "Subscriptions",
+      "sqlQuery": "SELECT * FROM c WHERE c.GCMToken = {GCMToken} OR c.Email = {Email} OR c.Phone = {Phone}",
+      "connection": "CosmosDBConnection",
+      "direction": "in"
+    },
+    {
+      "name": "newSubscription",
+      "type": "documentDB",
+      "databaseName": "GNIBIRPAndVisaAppointment",
+      "collectionName": "Subscriptions",
+      "createIfNotExists": true,
+      "connection": "CosmosDBConnection",
+      "direction": "out"
     },
     {
       "name": "$return",

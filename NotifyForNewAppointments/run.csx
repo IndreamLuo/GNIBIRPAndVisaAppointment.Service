@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Azure.Documents;
 
-public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log, IEnumerable<dynamic> lastTwoAppointments)
+public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log, IEnumerable<dynamic> lastTwoAppointments, ICollector<string> newValidAppointmentEventHubMessages)
 {
     log.Info("Start");
     var newAppointments = lastTwoAppointments.First();
@@ -25,7 +25,9 @@ public static async Task Run(IReadOnlyList<Document> documents, TraceWriter log,
         {
             foreach (var option in updatedOptions)
             {
-                log.Info($"Option-Updated: {option.Type}/{option.Category}/{option.SubCategory} {option.TimeRange.Time}-{option.TimeRange.Expiration}");
+                var message = "{option.Type}/{option.Category}/{option.SubCategory} {option.TimeRange.Time}-{option.TimeRange.Expiration}";
+                log.Info($"New valid appointment: {message}");
+                newValidAppointmentEventHubMessages.Add(message);
             }
         }
         else
