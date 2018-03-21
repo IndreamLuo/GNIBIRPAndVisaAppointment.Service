@@ -10,23 +10,20 @@ using Microsoft.WindowsAzure.Storage.Table;
 
 using System.Net;
 
-public static async Task Run(string eventMessage, IAsyncCollector<SMSMessage> messages, IQueryable<Subscription> subscriptions, TraceWriter log)
+public static async Task Run(string eventMessage, IAsyncCollector<SMSMessage> messages, TraceWriter log)
 {
     log.Info($"Sent SMS function processed a request from event({eventMessage}).");
 
-    // var tos = req.GetQueryNameValuePairs()
-    //     .Where(pair => pair.Key.ToLower() == "to")
-    //     .Select(pair => pair.Value)
-    //     .ToArray();
-    // log.Info($"To: [{string.Join(", ", tos)}]");
-    // var content = await req.Content.ReadAsAsync<string>();
+    var parameters = eventMessage.Split('\n');
+    var message = parameters[0];
+    var phone = parameters[1];
+    
+    messages.AddAsync(new SMSMessage {
+        To = phone,
+        Body = message
+    });
 
-    // Task.WaitAll(tos.Select(to => messages.AddAsync(new SMSMessage {
-    //     To = to,
-    //     Body = content
-    // })).ToArray());
-
-    // log.Info("Sent SMS function finished.");
+    log.Info("Sent SMS function finished.");
 }
 
 public static string GetEnvironmentVariable(string name)

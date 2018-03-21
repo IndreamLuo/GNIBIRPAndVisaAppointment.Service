@@ -7,6 +7,27 @@
       "connection": "EventHub",
       "path": "newvalidappointment",
       "direction": "in"
+    },
+    {
+      "name": "subscriptions",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "Subscription",
+      "direction": "in"
+    },
+    {
+      "name": "gcmNotificationEvents",
+      "type": "eventHub",
+      "connection": "EventHub",
+      "path": "newgcmnotification",
+      "direction": "out"
+    },
+    {
+      "name": "smsEvents",
+      "type": "eventHub",
+      "connection": "EventHub",
+      "path": "newsms",
+      "direction": "out"
     }
   ]
 }

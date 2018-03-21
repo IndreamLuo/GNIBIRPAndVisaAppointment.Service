@@ -9,14 +9,6 @@
       "direction": "in"
     },
     {
-      "name": "subscriptions",
-      "type": "table",
-      "connection": "Storage",
-      "tableName": "Subscription",
-      "partitionKey": "GCM",
-      "direction": "in"
-    },
-    {
       "type": "twilioSms",
       "name": "messages",
       "accountSid": "TwilioAccountSid",

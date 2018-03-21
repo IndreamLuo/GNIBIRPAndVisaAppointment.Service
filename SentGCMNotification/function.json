@@ -7,14 +7,6 @@
       "connection": "EventHub",
       "path": "newgcmnotification",
       "direction": "in"
-    },
-    {
-      "name": "subscriptions",
-      "type": "table",
-      "connection": "Storage",
-      "tableName": "Subscription",
-      "partitionKey": "GCM",
-      "direction": "in"
     }
   ]
 }

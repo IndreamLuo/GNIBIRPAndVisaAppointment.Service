@@ -10,26 +10,17 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-public static async Task Run(string eventMessage, IQueryable<Subscription> subscriptions, TraceWriter log)
+public static async Task Run(string eventMessage, TraceWriter log)
 {
     log.Info($"Sent GCM Notification function starts for event({eventMessage}).");
 
-    var parameters = eventMessage.Split('/', ' ', '-');
-    var type = parameters[0];
-    var category = parameters[1];
-    var subCategory = parameters[2];
-    var time = parameters[3];
-    var expiration = parameters[4];
+    var parameters = eventMessage.Split('\n');
 
-    var title = $"New Valid Appointment";
+    var title = parameters[0];
     log.Info($"Title: {title}");
-    var information = $"{category}{(subCategory != string.Empty ? "/" : string.Empty)}{subCategory}:{time}{(expiration == string.Empty ? "-" : string.Empty)}{expiration}";
+    var information = parameters[1];
     log.Info("Information: " + title);
-    var tos = subscriptions
-        .Where(subscription => (category == null || subscription.Category == category[0] || subscription.Category == null)
-            && (subCategory == null || subscription.SubCategory == subCategory[0] || subscription.SubCategory == null))
-        .Select(subscription => subscription.RowKey)
-        .ToArray();
+    var tos = parameters[2].Split('\n');
     log.Info($"To: [{string.Join(", ", tos)}]");
     var result = await SentGCMDownstreamMessage(title, information, tos, log);
     
