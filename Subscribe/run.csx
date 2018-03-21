@@ -12,12 +12,17 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
 {
     log.Info("Subscribe function processed a request.");
 
-    var query = new Queries(req);
+    var request = req.Content.ReadAsAsync<dynamic>().Result;
+    log.Info("Request queries organized.");
 
-    var gcmToken = query["gcmtoken"]?[0];
-    var type = query["type"]?[0];
-    var category = query["category"]?[0];
-    var subCategory = query["subcategory"]?[0];
+    string gcmToken = request.gcmToken;
+    log.Info($"GCM Token({gcmToken})");
+    string type = request.type;
+    log.Info($"Type({type})");
+    string category = request.category;
+    log.Info($"Category({category})");
+    string subCategory = request.subCategory;
+    log.Info($"Sub Category({subCategory})");
     
     var currentSubscription = subscriptions.FirstOrDefault(subscription => subscription.PartitionKey == "GCM" && subscription.RowKey == gcmToken);
     var newSubscription = currentSubscription
@@ -39,35 +44,4 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
 
     // Fetching the name from the path parameter in the request URL
     return req.CreateResponse(HttpStatusCode.OK, "Success");
-}
-
-public class Queries
-{
-    public Queries(HttpRequestMessage req)
-    {
-        Dictionary = req.GetQueryNameValuePairs()
-            .GroupBy(pair => pair.Key.ToLower())
-            .ToDictionary(group => group.Key, group => group.Select(pair => pair.Value).ToArray());
-    }
-
-    public readonly IDictionary<string, string[]> Dictionary;
-
-    public string[] this[string key]
-    {
-        get
-        {
-            string[] result;
-
-            if (!Dictionary.TryGetValue(key, out result))
-            {
-                result = null;
-            }
-
-            return result;
-        }
-        set
-        {
-            Dictionary[key] = value;
-        }
-    }
 }
