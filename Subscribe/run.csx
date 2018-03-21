@@ -24,7 +24,7 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
     string subCategory = request.subCategory;
     log.Info($"Sub Category({subCategory})");
     
-    var currentSubscription = subscriptions.FirstOrDefault(subscription => subscription.PartitionKey == "GCM" && subscription.RowKey == gcmToken);
+    var currentSubscription = subscriptions.Where(subscription => subscription.PartitionKey == "GCM" && subscription.RowKey == gcmToken).FirstOrDefault();
     var newSubscription = currentSubscription
     ?? new Subscription
     {

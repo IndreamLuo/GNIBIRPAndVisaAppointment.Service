@@ -1,28 +1,28 @@
+#load "..\shared.csx"
+
 #r "Microsoft.WindowsAzure.Storage"
 
 using System.Net;
 using Microsoft.WindowsAzure.Storage.Table;
 
-public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, ICollector<Person> outTable, TraceWriter log)
+public static async Task<HttpResponseMessage> Run(HttpRequestMessage req,
+    string type,
+    string key,
+    Subscription currentSubscription,
+    CloudTable outTable,
+    TraceWriter log)
 {
-    dynamic data = await req.Content.ReadAsAsync<object>();
-    string name = data?.name;
-
-    if (name == null)
+    log.Info($"Unsubscribe starts processing request with type({type}) and key({key}).");
+    if (currentSubscription != null)
     {
-        return req.CreateResponse(HttpStatusCode.BadRequest, "Please pass a name in the request body");
+        log.Info("Start deleting");
+        var deleteOperation = TableOperation.Delete(currentSubscription);
+        outTable.Execute(deleteOperation);
+        log.Info("Deleted");
+
+        return req.CreateResponse(HttpStatusCode.OK);
     }
 
-    outTable.Add(new Person()
-    {
-        PartitionKey = "Functions",
-        RowKey = Guid.NewGuid().ToString(),
-        Name = name
-    });
-    return req.CreateResponse(HttpStatusCode.Created);
-}
-
-public class Person : TableEntity
-{
-    public string Name { get; set; }
+    log.Info("Not exist");
+    return req.CreateResponse(HttpStatusCode.Accepted);
 }

@@ -4,9 +4,19 @@
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
+      "route": "Unsubscribe/{type}/{key}",
       "methods": [
         "post"
       ]
+    },
+    {
+      "type": "table",
+      "name": "currentSubscription",
+      "connection": "Storage",
+      "tableName": "Subscription",
+      "partitionKey": "{type}",
+      "rowKey": "{key}",
+      "direction": "in"
     },
     {
       "type": "http",
