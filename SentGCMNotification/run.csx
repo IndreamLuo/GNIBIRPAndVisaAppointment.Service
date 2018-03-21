@@ -1,3 +1,5 @@
+#load "..\shared.csx"
+
 #r "Newtonsoft.Json"
 #r "Microsoft.WindowsAzure.Storage"
 
@@ -10,7 +12,7 @@ using System.Text;
 
 public static async Task Run(string eventMessage, IQueryable<Subscription> subscriptions, TraceWriter log)
 {
-    log.Info($"Sent GCM Downstream Message function starts for event({eventMessage}).");
+    log.Info($"Sent GCM Notification function starts for event({eventMessage}).");
 
     var parameters = eventMessage.Split('/', ' ', '-');
     var type = parameters[0];
@@ -20,7 +22,7 @@ public static async Task Run(string eventMessage, IQueryable<Subscription> subsc
     var expiration = parameters[4];
 
     var title = $"New Valid Appointment";
-    log.Info($"Title: ({title})");
+    log.Info($"Title: {title}");
     var information = $"{category}{(subCategory != string.Empty ? "/" : string.Empty)}{subCategory}:{time}{(expiration == string.Empty ? "-" : string.Empty)}{expiration}";
     log.Info("Information: " + title);
     var tos = subscriptions
@@ -66,12 +68,4 @@ public static async Task<bool> SentGCMDownstreamMessage(string title, string inf
 public static string GetEnvironmentVariable(string name)
 {
     return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
-}
-
-
-public class Subscription : TableEntity
-{
-    public char? Type { get; set; }
-    public char? Category { get; set; }
-    public char? SubCategory { get; set; }
 }

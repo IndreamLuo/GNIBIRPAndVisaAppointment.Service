@@ -5,7 +5,7 @@
       "name": "eventMessage",
       "type": "eventHubTrigger",
       "connection": "EventHub",
-      "path": "newvalidappointment",
+      "path": "newsms",
       "direction": "in"
     },
     {

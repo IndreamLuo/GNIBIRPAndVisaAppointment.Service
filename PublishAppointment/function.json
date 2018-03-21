@@ -2,19 +2,11 @@
   "disabled": false,
   "bindings": [
     {
-      "authLevel": "function",
-      "name": "req",
-      "type": "httpTrigger",
-      "direction": "in",
-      "route": "PublishAppointment/name/{name}",
-      "methods": [
-        "get"
-      ]
-    },
-    {
-      "name": "$return",
-      "type": "http",
-      "direction": "out"
+      "name": "eventMessage",
+      "type": "eventHubTrigger",
+      "connection": "EventHub",
+      "path": "newvalidappointment",
+      "direction": "in"
     }
   ]
 }

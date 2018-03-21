@@ -2,6 +2,8 @@
 #r "Newtonsoft.Json"
 #r "Microsoft.WindowsAzure.Storage"
 
+#load "..\shared.csx"
+
 using Twilio;
 using Newtonsoft.Json;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -30,12 +32,4 @@ public static async Task Run(string eventMessage, IAsyncCollector<SMSMessage> me
 public static string GetEnvironmentVariable(string name)
 {
     return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
-}
-
-
-public class Subscription : TableEntity
-{
-    public char? Type { get; set; }
-    public char? Category { get; set; }
-    public char? SubCategory { get; set; }
 }

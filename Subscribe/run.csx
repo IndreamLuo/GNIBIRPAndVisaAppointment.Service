@@ -1,3 +1,5 @@
+#load "..\shared.csx"
+
 #r "Microsoft.WindowsAzure.Storage"
 using Microsoft.WindowsAzure.Storage.Table;
 
@@ -37,14 +39,6 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
 
     // Fetching the name from the path parameter in the request URL
     return req.CreateResponse(HttpStatusCode.OK, "Success");
-}
-
-
-public class Subscription : TableEntity
-{
-    public char? Type { get; set; }
-    public char? Category { get; set; }
-    public char? SubCategory { get; set; }
 }
 
 public class Queries
