@@ -20,30 +20,45 @@ public static async Task Run(string eventMessage,
     log.Info("Event Message deserialized.");
 
     var validSubscriptions = subscriptions
+        .ToArray()
         .Where(subscription => (subscription.Category == null || subscription.Category == category[0])
             && (subscription.SubCategory == null || subscription.SubCategory == subCategory[0]));
     
-    log.Info($"Valid subscriptions({validSubscriptions.Count()})");
+    log.Info("Sending SMS");
 
     var smses = validSubscriptions.Where(subscription => subscription.PartitionKey == "SMS");
+
+    log.Info($"SMS subscriptions got({smses.Count()}).");
+
     foreach (var sms in smses)
     {
         var smsEvent = $"{time} - {type}/{category}/{subCategory}\n"
             + sms.RowKey;
+
+        log.Info($"SMS sending: ({smsEvent})");
+
         smsEvents.Add(smsEvent);
+
         log.Info($"SMS sent: ({smsEvent})");
     }
 
+    log.Info("Sending GCM");
+
     var gcms = validSubscriptions.Where(subscription => subscription.PartitionKey == "GCM");
-    while (gcms.Count() > 0)
+
+    log.Info($"GCM subscriptions got({gcms.Count()}).");
+
+    var gcmMessage = $"[{type}]New Valid Appointment\n"
+        + $"{category}/{subCategory} - {time}{(expiration == null ? string.Empty : "-")}{expiration}\n";
+    foreach (var gcm in gcms)
     {
-        log.Info($"GCM left: ({gcms.Count()})");
+        var gcmEvent = $"{gcmMessage}{gcm.RowKey}";
 
-        var gcmEvent = $"[{type}]New Valid Appointment\n"
-            + $"{category}/{subCategory} - {time}{(expiration == null ? string.Empty : "-")}{expiration}\n"
-            + string.Join("\n", gcms.Take(100).Select(subscription => subscription.RowKey));
+        log.Info($"GCM sending: ({gcmEvent})");
 
-        gcms = gcms.Skip(100);
+        gcmNotificationEvents.Add(gcmEvent);
+
+        log.Info($"GCM sent: ({gcmEvent})");
     }
 
     log.Info("Finished.");

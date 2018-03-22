@@ -19,15 +19,15 @@ public static async Task Run(string eventMessage, TraceWriter log)
     var title = parameters[0];
     log.Info($"Title: {title}");
     var information = parameters[1];
-    log.Info("Information: " + title);
-    var tos = parameters[2].Split('\n');
-    log.Info($"To: [{string.Join(", ", tos)}]");
-    var result = await SentGCMDownstreamMessage(title, information, tos, log);
+    log.Info("Information: " + information);
+    var to = parameters[2];
+    log.Info($"To: [{string.Join(", ", to)}]");
+    var result = await SentGCMDownstreamMessage(title, information, to, log);
     
     log.Info("Sent GCM Downstream Message function ends.");
 }
 
-public static async Task<bool> SentGCMDownstreamMessage(string title, string information, string[] tos, TraceWriter log)
+public static async Task<bool> SentGCMDownstreamMessage(string title, string information, string to, TraceWriter log)
 {
     using (var client = new HttpClient())
     {
@@ -40,7 +40,7 @@ public static async Task<bool> SentGCMDownstreamMessage(string title, string inf
                 title = title,
                 information = information
             },
-            to = tos
+            to = to
         };
         var dataString = JsonConvert.SerializeObject(data);
         var content = new StringContent(dataString, Encoding.Default, "application/json");
@@ -50,6 +50,7 @@ public static async Task<bool> SentGCMDownstreamMessage(string title, string inf
         var response = await client.PostAsync("https://gcm-http.googleapis.com/gcm/send", content);
 
         log.Info("GCM Post Status: " + response.StatusCode);
+        log.Info(await response.Content.ReadAsStringAsync());
 
         return response.StatusCode == HttpStatusCode.OK;
     }
