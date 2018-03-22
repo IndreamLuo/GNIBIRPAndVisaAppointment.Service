@@ -10,7 +10,7 @@ public static async Task Run(string eventMessage,
 {
     log.Info($"C# HTTP trigger function processed a request from event({eventMessage}).");
 
-    var parameters = eventMessage.Split('/', ' ', '-');
+    var parameters = eventMessage.Split('-');
     var type = parameters[0];
     var category = parameters[1];
     var subCategory = parameters[2];
@@ -48,8 +48,8 @@ public static async Task Run(string eventMessage,
 
     log.Info($"GCM subscriptions got({gcms.Count()}).");
 
-    var gcmMessage = $"[{type}]New Valid Appointment\n"
-        + $"{category}/{subCategory} - {time}{(expiration == null ? string.Empty : "-")}{expiration}\n";
+    var gcmMessage = $"New Valid [{type}] Appointment\n"
+        + $"{category}-{subCategory}: {time}{(expiration == string.Empty ? string.Empty : "-")}{expiration}\n";
     foreach (var gcm in gcms)
     {
         var gcmEvent = $"{gcmMessage}{gcm.RowKey}";
