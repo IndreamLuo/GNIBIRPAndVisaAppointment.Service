@@ -14,35 +14,34 @@ public static async Task Run(string eventMessage, TraceWriter log)
 {
     log.Info($"Sent GCM Notification function starts for event({eventMessage}).");
 
-    var parameters = eventMessage.Split('\n');
+    var parameters = new Queue<string>(eventMessage.Split('\n'));
 
-    var title = parameters[0];
-    log.Info($"Title: {title}");
-    var information = parameters[1];
-    log.Info("Information: " + information);
-    var to = parameters[2];
-    log.Info($"To: [{string.Join(", ", to)}]");
-    var result = await SentGCMDownstreamMessage(title, information, to, log);
-    
-    log.Info("Sent GCM Downstream Message function ends.");
-}
-
-public static async Task<bool> SentGCMDownstreamMessage(string title, string information, string to, TraceWriter log)
-{
     using (var client = new HttpClient())
     {
         client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", GetEnvironmentVariable("GCMServiceKey"));
-        var data = new
+        var data = new Dictionary<string, string>();
+        var to = string.Empty;
+
+        while (parameters.Any())
         {
-            data = new
+            var key = parameters.Dequeue();
+            var value = parameters.Dequeue();
+            
+            if (key == "gcmToken")
             {
-                title = title,
-                information = information
-            },
+                to = value;
+            }
+            else
+            {
+                data[key] = value;
+            }
+        }
+
+        var dataString = JsonConvert.SerializeObject(new {
+            data = data,
             to = to
-        };
-        var dataString = JsonConvert.SerializeObject(data);
+        });
         var content = new StringContent(dataString, Encoding.Default, "application/json");
 
         log.Info("GCM Post Start");
@@ -51,9 +50,9 @@ public static async Task<bool> SentGCMDownstreamMessage(string title, string inf
 
         log.Info("GCM Post Status: " + response.StatusCode);
         log.Info(await response.Content.ReadAsStringAsync());
-
-        return response.StatusCode == HttpStatusCode.OK;
     }
+    
+    log.Info("Sent GCM Downstream Message function ends.");
 }
 
 

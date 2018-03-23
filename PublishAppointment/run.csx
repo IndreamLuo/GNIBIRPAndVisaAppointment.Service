@@ -39,7 +39,7 @@ public static async Task Run(string eventMessage,
 
         smsEvents.Add(smsEvent);
 
-        log.Info($"SMS sent: ({smsEvent})");
+        log.Info($"SMS sent.");
     }
 
     log.Info("Sending GCM");
@@ -48,17 +48,22 @@ public static async Task Run(string eventMessage,
 
     log.Info($"GCM subscriptions got({gcms.Count()}).");
 
-    var gcmMessage = $"New Valid [{type}] Appointment\n"
-        + $"{category}-{subCategory}: {time}{(expiration == string.Empty ? string.Empty : "-")}{expiration}\n";
+    var gcmMessage = $"type\n{type}\n"
+        + $"category\n{category}\n"
+        + $"subCategory\n{subCategory}\n"
+        + $"time\n{time}\n"
+        + $"expiration\n{expiration}\n"
+        + $"title\nNew Valid [{type}] Appointment\n"
+        + $"message\n{category}-{subCategory}: {time}{(expiration == string.Empty ? string.Empty : "-")}{expiration}\n";
     foreach (var gcm in gcms)
     {
-        var gcmEvent = $"{gcmMessage}{gcm.RowKey}";
+        var gcmEvent = $"{gcmMessage}gcmToken\n{gcm.RowKey}";
 
         log.Info($"GCM sending: ({gcmEvent})");
 
         gcmNotificationEvents.Add(gcmEvent);
 
-        log.Info($"GCM sent: ({gcmEvent})");
+        log.Info($"GCM sent.");
     }
 
     log.Info("Finished.");
