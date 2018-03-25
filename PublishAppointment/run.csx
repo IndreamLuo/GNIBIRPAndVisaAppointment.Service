@@ -10,7 +10,7 @@ public static async Task Run(string eventMessage,
 {
     log.Info($"C# HTTP trigger function processed a request from event({eventMessage}).");
 
-    var parameters = eventMessage.Split('-');
+    var parameters = eventMessage.Split('^');
     var type = parameters[0];
     var category = parameters[1];
     var subCategory = parameters[2];
