@@ -14,8 +14,17 @@ public static async Task Run(string eventMessage,
     var type = parameters[0];
     var category = parameters[1];
     var subCategory = parameters[2];
-    var time = parameters[3];
-    var expiration = parameters[4];
+    DateTime parseTime;
+    DateTime? time = null;
+    if (DateTime.TryParse(parameters[3], out parseTime))
+    {
+        time = parseTime;
+    }
+    DateTime? expiration = null;
+    if (DateTime.TryParse(parameters[4], out parseTime))
+    {
+        expiration = parseTime;
+    }
 
     log.Info("Event Message deserialized.");
 
@@ -48,13 +57,15 @@ public static async Task Run(string eventMessage,
 
     log.Info($"GCM subscriptions got({gcms.Count()}).");
 
+    var timeFormat = "dd MMMM yyyy HH:mm";
+
     var gcmMessage = $"type\n{type}\n"
         + $"category\n{category}\n"
         + $"subCategory\n{subCategory}\n"
         + $"time\n{time}\n"
         + $"expiration\n{expiration}\n"
         + $"title\nNew Valid [{type}] Appointment\n"
-        + $"message\n{category}-{subCategory}: {time}{(expiration == string.Empty ? string.Empty : "-")}{expiration}\n";
+        + $"message\n{category}-{subCategory}: {(time.HasValue ? time.Value.ToString(timeFormat) : string.Empty)}{(expiration == null ? string.Empty : "-")}{(expiration.HasValue ? expiration.Value.ToString(timeFormat) : string.Empty)}\n";
     foreach (var gcm in gcms)
     {
         var gcmEvent = $"{gcmMessage}gcmToken\n{gcm.RowKey}";
