@@ -25,12 +25,12 @@ public static void Run(TimerInfo Timer,
     var now = DateTime.Now;
     var day = DateTime.Now.ToString("ddMMyyyy HH:mm:ss");
     var rowKey = 0;
+    var newAppointments = new List<Appointment>();
+
+    log.Info(now.ToString());
 
     using (var client = new HttpClient())
     {
-        log.Info(now.ToString());
-        var newAppointments = new List<Appointment>();
-
         log.Info("Start loading from APIs.");
         foreach (var api in APIs)
         {
@@ -109,27 +109,30 @@ public static void Run(TimerInfo Timer,
         log.Info("Check with last appointments.");
         log.Info("Checking count.");
         log.Info($"new({newAppointments.Count()}) : old({lastAppointments.Count()})");
+    }
 
-        var passedAppointments = lastAppointments
-            .Where(lastAppointment => newAppointments
-                .All(newAppointment => newAppointment.Type != lastAppointment.Type
-                    || newAppointment.Category != lastAppointment.Category
-                    || newAppointment.SubCategory != lastAppointment.SubCategory
-                    || newAppointment.Time != lastAppointment.Time
-                    || newAppointment.Expiration != lastAppointment.Expiration))
-            .ToArray();
-        
-        var newValidAppointments = newAppointments
-            .Where(newAppointment => lastAppointments
-                .All(lastAppointment => newAppointment.Type != lastAppointment.Type
-                    || newAppointment.Category != lastAppointment.Category
-                    || newAppointment.SubCategory != lastAppointment.SubCategory
-                    || newAppointment.Time != lastAppointment.Time
-                    || newAppointment.Expiration != lastAppointment.Expiration))
-            .ToArray();
+    var passedAppointments = lastAppointments
+        .Where(lastAppointment => newAppointments
+            .All(newAppointment => newAppointment.Type != lastAppointment.Type
+                || newAppointment.Category != lastAppointment.Category
+                || newAppointment.SubCategory != lastAppointment.SubCategory
+                || newAppointment.Time != lastAppointment.Time
+                || newAppointment.Expiration != lastAppointment.Expiration))
+        .ToArray();
+    
+    var newValidAppointments = newAppointments
+        .Where(newAppointment => lastAppointments
+            .All(lastAppointment => newAppointment.Type != lastAppointment.Type
+                || newAppointment.Category != lastAppointment.Category
+                || newAppointment.SubCategory != lastAppointment.SubCategory
+                || newAppointment.Time != lastAppointment.Time
+                || newAppointment.Expiration != lastAppointment.Expiration))
+        .ToArray();
 
-        log.Info($"New valid appointments({newValidAppointments.Count()}), passed Appointments({passedAppointments.Count()}).");
-        if (newValidAppointments.Count() > 0 || passedAppointments.Count() > 0)
+    log.Info($"New valid appointments({newValidAppointments.Count()}), passed Appointments({passedAppointments.Count()}).");
+    if (newValidAppointments.Any() || passedAppointments.Any())
+    {
+        if (lastAppointments.Any())
         {
             log.Info("All replicated appointments to be set existing keys.");
             foreach (var appointment in newAppointments)
@@ -148,35 +151,35 @@ public static void Run(TimerInfo Timer,
                     appointment.Published = existingAppointment.Published;
                 }
             }
+        }
 
-            log.Info("Delete all last appointments.");
-            foreach (var appointment in lastAppointments)
-            {
-                outLastTable.Execute(TableOperation.Delete(appointment));
-            }
+        log.Info("Delete all last appointments.");
+        foreach (var appointment in lastAppointments)
+        {
+            outLastTable.Execute(TableOperation.Delete(appointment));
+        }
 
-            log.Info("Set last appointments.");
-            foreach (var appointment in newAppointments)
-            {
-                outLastTable.Execute(TableOperation.Insert(appointment));
-            }
+        log.Info("Set last appointments.");
+        foreach (var appointment in newAppointments)
+        {
+            outLastTable.Execute(TableOperation.Insert(appointment));
+        }
 
-            log.Info("Output new appointments.");
-            foreach (var appointment in newValidAppointments)
-            {
-                outTable.Execute(TableOperation.Insert(appointment));
-                var eventMessage = appointment.ToEventMessage();
-                log.Info($"New Event Message: {eventMessage}");
-                newValidAppointmentEventHubMessages.Add(appointment.ToEventMessage());
-            }
+        log.Info("Output new appointments.");
+        foreach (var appointment in newValidAppointments)
+        {
+            outTable.Execute(TableOperation.Insert(appointment));
+            var eventMessage = appointment.ToEventMessage();
+            log.Info($"New Event Message: {eventMessage}");
+            newValidAppointmentEventHubMessages.Add(appointment.ToEventMessage());
+        }
 
-            log.Info("Set passed appointments.");
-            foreach (var appointment in passedAppointments)
-            {
-                appointment.ETag = "*";
-                appointment.Appointed = now;
-                outTable.Execute(TableOperation.Replace(appointment));
-            }
+        log.Info("Set passed appointments.");
+        foreach (var appointment in passedAppointments)
+        {
+            appointment.ETag = "*";
+            appointment.Appointed = now;
+            outTable.Execute(TableOperation.Replace(appointment));
         }
     }
 }
