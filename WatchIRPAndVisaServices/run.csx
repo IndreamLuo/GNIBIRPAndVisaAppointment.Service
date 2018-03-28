@@ -131,6 +131,24 @@ public static void Run(TimerInfo Timer,
         log.Info($"New valid appointments({newValidAppointments.Count()}), passed Appointments({passedAppointments.Count()}).");
         if (newValidAppointments.Count() > 0 || passedAppointments.Count() > 0)
         {
+            log.Info("All replicated appointments to be set existing keys.");
+            foreach (var appointment in newAppointments)
+            {
+                var existingAppointment = lastAppointments.SingleOrDefault(lastAppointment => appointment.Type == lastAppointment.Type
+                    && appointment.Category == lastAppointment.Category
+                    && appointment.SubCategory == lastAppointment.SubCategory
+                    && appointment.Time == lastAppointment.Time
+                    && appointment.Expiration == lastAppointment.Expiration);
+                
+                log.Info($"Appointment({existingAppointment.PartitionKey}/{existingAppointment.RowKey}) changed.");
+                if (existingAppointment != null)
+                {
+                    appointment.PartitionKey = existingAppointment.PartitionKey;
+                    appointment.RowKey = existingAppointment.RowKey;
+                    appointment.Published = existingAppointment.Published;
+                }
+            }
+
             log.Info("Delete all last appointments.");
             foreach (var appointment in lastAppointments)
             {
@@ -143,13 +161,6 @@ public static void Run(TimerInfo Timer,
                 outLastTable.Execute(TableOperation.Insert(appointment));
             }
 
-            log.Info("Set passed appointments.");
-            foreach (var appointment in passedAppointments)
-            {
-                appointment.Appointed = now;
-                outTable.Execute(TableOperation.Replace(appointment));
-            }
-
             log.Info("Output new appointments.");
             foreach (var appointment in newValidAppointments)
             {
@@ -157,6 +168,14 @@ public static void Run(TimerInfo Timer,
                 var eventMessage = appointment.ToEventMessage();
                 log.Info($"New Event Message: {eventMessage}");
                 newValidAppointmentEventHubMessages.Add(appointment.ToEventMessage());
+            }
+
+            log.Info("Set passed appointments.");
+            foreach (var appointment in passedAppointments)
+            {
+                appointment.ETag = "*";
+                appointment.Appointed = now;
+                outTable.Execute(TableOperation.Replace(appointment));
             }
         }
     }
