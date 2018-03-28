@@ -32,9 +32,9 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
         RowKey = gcmToken,
     };
 
-    newSubscription.Type = type?[0];
-    newSubscription.Category = category?[0];
-    newSubscription.SubCategory = subCategory?[0];
+    newSubscription.Type = type;
+    newSubscription.Category = category;
+    newSubscription.SubCategory = subCategory;
 
     var operation = currentSubscription != null
     ? TableOperation.Replace(newSubscription)

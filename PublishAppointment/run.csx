@@ -10,28 +10,14 @@ public static async Task Run(string eventMessage,
 {
     log.Info($"C# HTTP trigger function processed a request from event({eventMessage}).");
 
-    var parameters = eventMessage.Split('^');
-    var type = parameters[0];
-    var category = parameters[1];
-    var subCategory = parameters[2];
-    DateTime parseTime;
-    DateTime? time = null;
-    if (DateTime.TryParse(parameters[3], out parseTime))
-    {
-        time = parseTime;
-    }
-    DateTime? expiration = null;
-    if (DateTime.TryParse(parameters[4], out parseTime))
-    {
-        expiration = parseTime;
-    }
+    var appointment = Appointment.FromEventMessage(eventMessage);
 
     log.Info("Event Message deserialized.");
 
     var validSubscriptions = subscriptions
         .ToArray()
-        .Where(subscription => (subscription.Category == null || subscription.Category == category[0])
-            && (subscription.SubCategory == null || subscription.SubCategory == subCategory[0]));
+        .Where(subscription => (subscription.Category == null || subscription.Category == appointment.Category)
+            && (subscription.SubCategory == null || subscription.SubCategory == appointment.SubCategory));
     
     log.Info("Sending SMS");
 
@@ -41,7 +27,7 @@ public static async Task Run(string eventMessage,
 
     foreach (var sms in smses)
     {
-        var smsEvent = $"{time} - {type}/{category}/{subCategory}\n"
+        var smsEvent = $"{appointment.Time} - {appointment.Type}/{appointment.Category}/{appointment.SubCategory}\n"
             + sms.RowKey;
 
         log.Info($"SMS sending: ({smsEvent})");
@@ -59,13 +45,13 @@ public static async Task Run(string eventMessage,
 
     var timeFormat = "dd MMMM yyyy HH:mm";
 
-    var gcmMessage = $"type\n{type}\n"
-        + $"category\n{category}\n"
-        + $"subCategory\n{subCategory}\n"
-        + $"time\n{time}\n"
-        + $"expiration\n{expiration}\n"
-        + $"title\nNew Valid [{type}] Appointment\n"
-        + $"message\n{category}-{subCategory}: {(time.HasValue ? time.Value.ToString(timeFormat) : string.Empty)}{(expiration == null ? string.Empty : "-")}{(expiration.HasValue ? expiration.Value.ToString(timeFormat) : string.Empty)}\n";
+    var gcmMessage = $"type\n{appointment.Type}\n"
+        + $"category\n{appointment.Category}\n"
+        + $"subCategory\n{appointment.SubCategory}\n"
+        + $"time\n{appointment.Time}\n"
+        + $"expiration\n{appointment.Expiration}\n"
+        + $"title\nNew Valid [{appointment.Type}] Appointment\n"
+        + $"message\n{appointment.Category}-{appointment.SubCategory}: {(appointment.Time.HasValue ? appointment.Time.Value.ToString(timeFormat) : string.Empty)}{(appointment.Expiration == null ? string.Empty : "-")}{(appointment.Expiration.HasValue ? appointment.Expiration.Value.ToString(timeFormat) : string.Empty)}\n";
     foreach (var gcm in gcms)
     {
         var gcmEvent = $"{gcmMessage}gcmToken\n{gcm.RowKey}";

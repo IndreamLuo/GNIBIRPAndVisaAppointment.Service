@@ -1,12 +1,55 @@
 #r "Microsoft.WindowsAzure.Storage"
 using Microsoft.WindowsAzure.Storage.Table;
 
+
+public class Appointment : TableEntity
+{
+    public string Type { get; set; }
+    public string Category { get; set; }
+    public string SubCategory { get; set; }
+    public DateTime? Time { get; set; }
+    public DateTime? Expiration { get; set; }
+    public DateTime Published { get; set; }
+    public DateTime? Appointed { get; set; }
+
+    private const char Separator = '\n';
+    public string ToEventMessage()
+    {
+        return string.Join(Separator.ToString(), this.Type, this.Category, this.SubCategory, this.Time, this.Expiration, this.Published, this.Appointed);
+    }
+
+    public static Appointment FromEventMessage(string message)
+    {
+        var splits = message.Split(Separator);
+        return new Appointment
+        {
+            Type = splits[0],
+            Category = splits[1],
+            SubCategory = splits[2],
+            Time = Parse(splits[3]),
+            Expiration = Parse(splits[4]),
+            Published = Parse(splits[5]).Value,
+            Appointed = Parse(splits[6])
+        };
+    }
+
+    private static DateTime? Parse(string timeString)
+    {
+        DateTime time;
+        return DateTime.TryParse(timeString, out time)
+        ? time
+        : (DateTime?)null;
+    }
+}
+
+
 public class Subscription : TableEntity
 {
-    public char? Type { get; set; }
-    public char? Category { get; set; }
-    public char? SubCategory { get; set; }
+    public string Type { get; set; }
+    public string Category { get; set; }
+    public string SubCategory { get; set; }
 }
+
 
 public class Queries
 {

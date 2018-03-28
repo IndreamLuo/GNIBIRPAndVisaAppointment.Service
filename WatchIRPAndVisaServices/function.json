@@ -8,21 +8,31 @@
       "direction": "in"
     },
     {
-      "name": "lastAppointments",
-      "type": "documentDB",
-      "databaseName": "GNIBIRPAndVisaAppointment",
-      "collectionName": "Appointments",
-      "sqlQuery": "SELECT Top 1 * FROM c ORDER BY c._ts DESC",
-      "connection": "CosmosDBConnection",
+      "name": "lastAppointmentInput",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "LastAppointment",
       "direction": "in"
     },
     {
-      "name": "$return",
-      "type": "documentDB",
-      "databaseName": "GNIBIRPAndVisaAppointment",
-      "collectionName": "Appointments",
-      "createIfNotExists": true,
-      "connection": "CosmosDBConnection",
+      "name": "outTable",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "Appointment",
+      "direction": "out"
+    },
+    {
+      "name": "outLastTable",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "LastAppointment",
+      "direction": "out"
+    },
+    {
+      "type": "eventHub",
+      "name": "newValidAppointmentEventHubMessages",
+      "connection": "EventHub",
+      "path": "newvalidappointment",
       "direction": "out"
     }
   ]

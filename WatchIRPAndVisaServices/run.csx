@@ -1,4 +1,9 @@
+#load "..\shared.csx"
+
 #r "Newtonsoft.Json"
+
+#r "Microsoft.WindowsAzure.Storage"
+using Microsoft.WindowsAzure.Storage.Table;
 
 using Newtonsoft.Json;
 
@@ -6,20 +11,25 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-public static object Run(TimerInfo Timer, TraceWriter log, IEnumerable<dynamic> lastAppointments)
+public static void Run(TimerInfo Timer,
+    TraceWriter log,
+    IQueryable<Appointment> lastAppointmentInput,
+    CloudTable outTable,
+    CloudTable outLastTable,
+    ICollector<string> newValidAppointmentEventHubMessages)
 {
     log.Info("Watch IRP And Visa Services function processed a request.");
-    log.Info($"Last Appointments:{lastAppointments.Count().ToString()}");
+    var lastAppointments = lastAppointmentInput.ToArray();
+    log.Info($"Last Appointments:{lastAppointments.Count()}");
+
+    var now = DateTime.Now;
+    var day = DateTime.Now.ToString("ddMMyyyy HH:mm:ss");
+    var rowKey = 0;
 
     using (var client = new HttpClient())
     {
-        var now = DateTime.Now;
         log.Info(now.ToString());
-        var newAppointments = new
-        {
-            Time = now,
-            Appointments = new List<Appointment>()
-        };
+        var newAppointments = new List<Appointment>();
 
         log.Info("Start loading from APIs.");
         foreach (var api in APIs)
@@ -42,15 +52,6 @@ public static object Run(TimerInfo Timer, TraceWriter log, IEnumerable<dynamic> 
                 }
             }
             
-            var appointment = new Appointment
-            {
-                Type = api.Type,
-                Category = api.Category,
-                SubCategory = api.SubCategory,
-                TimeRanges = new List<TimeRange>()
-            };
-            
-            var anyTime = false;
             switch (api.Type)
             {
                 case "IRP":
@@ -59,8 +60,17 @@ public static object Run(TimerInfo Timer, TraceWriter log, IEnumerable<dynamic> 
                         foreach (var slot in urlResult.slots)
                         {
                             var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
-                            appointment.TimeRanges.Add(time);
-                            anyTime = true;
+                            newAppointments.Add(new Appointment
+                            {
+                                PartitionKey = day,
+                                RowKey = rowKey++.ToString(),
+                                Type = api.Type,
+                                Category = api.Category,
+                                SubCategory = api.SubCategory,
+                                Time = time.Time,
+                                Expiration = time.Expiration,
+                                Published = now
+                            });
                         }
                     }
                     break;
@@ -76,48 +86,88 @@ public static object Run(TimerInfo Timer, TraceWriter log, IEnumerable<dynamic> 
                                 foreach (var slot in subUrlResult.slots)
                                 {
                                     var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
-                                    appointment.TimeRanges.Add(time);
-                                    anyTime = true;
+                                    newAppointments.Add(new Appointment
+                                    {
+                                        PartitionKey = day,
+                                        RowKey = rowKey++.ToString(),
+                                        Type = api.Type,
+                                        Category = api.Category,
+                                        SubCategory = api.SubCategory,
+                                        Time = time.Time,
+                                        Expiration = time.Expiration,
+                                        Published = now
+                                    });
                                 }
                             }
                         }
                     }
                     break;
             }
+        }
 
-            if (anyTime)
+
+        log.Info("Check with last appointments.");
+        log.Info("Checking count.");
+        log.Info($"new({newAppointments.Count()}) : old({lastAppointments.Count()})");
+
+        var passedAppointments = lastAppointments
+            .Where(lastAppointment => newAppointments
+                .All(newAppointment => newAppointment.Type != lastAppointment.Type
+                    || newAppointment.Category != lastAppointment.Category
+                    || newAppointment.SubCategory != lastAppointment.SubCategory
+                    || newAppointment.Time != lastAppointment.Time
+                    || newAppointment.Expiration != lastAppointment.Expiration))
+            .ToArray();
+        
+        var newValidAppointments = newAppointments
+            .Where(newAppointment => lastAppointments
+                .All(lastAppointment => newAppointment.Type != lastAppointment.Type
+                    || newAppointment.Category != lastAppointment.Category
+                    || newAppointment.SubCategory != lastAppointment.SubCategory
+                    || newAppointment.Time != lastAppointment.Time
+                    || newAppointment.Expiration != lastAppointment.Expiration))
+            .ToArray();
+
+        log.Info($"New valid appointments({newValidAppointments.Count()}), passed Appointments({passedAppointments.Count()}).");
+        if (newValidAppointments.Count() > 0 || passedAppointments.Count() > 0)
+        {
+            log.Info("Delete all last appointments.");
+            foreach (var appointment in lastAppointments)
             {
-                newAppointments.Appointments.Add(appointment);
+                outLastTable.Execute(TableOperation.Delete(appointment));
+            }
+
+            log.Info("Set last appointments.");
+            foreach (var appointment in newAppointments)
+            {
+                outLastTable.Execute(TableOperation.Insert(appointment));
+            }
+
+            log.Info("Set passed appointments.");
+            foreach (var appointment in passedAppointments)
+            {
+                appointment.Appointed = now;
+                outTable.Execute(TableOperation.Replace(appointment));
+            }
+
+            log.Info("Output new appointments.");
+            foreach (var appointment in newValidAppointments)
+            {
+                outTable.Execute(TableOperation.Insert(appointment));
+                var eventMessage = appointment.ToEventMessage();
+                log.Info($"New Event Message: {eventMessage}");
+                newValidAppointmentEventHubMessages.Add(appointment.ToEventMessage());
             }
         }
-
-        log.Info("Watch IRP And Visa Services function finished.");
-        var lastAppointment = lastAppointments.FirstOrDefault();
-        if (IsDifferentAppointments(log, newAppointments, lastAppointment))
-        {
-            return newAppointments;
-        }
-
-        return null;
     }
-}
-
-
-
-public class Appointment
-{
-    public string Type { get; set; }
-    public string Category { get; set; }
-    public string SubCategory { get; set; }
-    public List<TimeRange> TimeRanges { get; set; }
 }
 
 
 
 public class TimeRange
 {
-    public object Time { get; set; }
-    public object Expiration { get; set; }
+    public DateTime? Time { get; set; }
+    public DateTime? Expiration { get; set; }
 }
 
 
@@ -230,8 +280,8 @@ public static Dictionary<string, int> Months = new Dictionary<string, int>
 
 public static TimeRange ConvertSlotToDateTime(TraceWriter log, string type, string category, string subCategory, string slot)
 {
-    object time = slot;
-    object expiration = null;
+    DateTime? time = null;
+    DateTime? expiration = null;
     
     switch (type)
     {
@@ -277,79 +327,6 @@ public static TimeRange ConvertSlotToDateTime(TraceWriter log, string type, stri
 }
 
 
-
-public static bool IsDifferentAppointments(TraceWriter log, dynamic newAppointments, dynamic lastAppointments)
-{
-    log.Info("Check with last appointments.");
-    log.Info("Checking count.");
-    log.Info($"new({newAppointments.Appointments.Count}) : old({lastAppointments?.Appointments?.Count ?? -1})");
-    if (newAppointments.Appointments.Count != (lastAppointments?.Appointments?.Count ?? -1))
-    {
-        log.Info("Counts are different.");
-        return true;
-    }
-
-    var newAppointmentsList = (newAppointments
-        .Appointments as IEnumerable<object>)
-        .Cast<dynamic>()
-        .OrderBy(appointment => appointment.Type)
-        .ThenBy(appointment => appointment.Category)
-        .ThenBy(appointment => appointment.SubCategory)
-        .ToArray();
-
-    var lastAppointmentsList = (lastAppointments
-        .Appointments as IEnumerable<object>)
-        .Cast<dynamic>()
-        .OrderBy(appointment => appointment.Type)
-        .ThenBy(appointment => appointment.Category)
-        .ThenBy(appointment => appointment.SubCategory)
-        .ToArray();
-
-    log.Info("Checking order.");
-    for (var index = 0; index < newAppointmentsList.Length; index++)
-    {
-        var newAppointment = newAppointmentsList[index];
-        var lastAppointment = lastAppointmentsList[index];
-
-        log.Info("Checking categories.");
-        if (!AreEqual(newAppointment.Type, lastAppointment?.Type?.ToString())
-            || !AreEqual(newAppointment.Category, lastAppointment?.Category?.ToString())
-            || !AreEqual(newAppointment.SubCategory, lastAppointment?.SubCategory?.ToString()))
-        {
-            log.Info("Different in Type/Category/Subcategory");
-            return true;
-        }
-
-        log.Info("Check times.");
-
-        var newTimes = (newAppointment.TimeRanges as IEnumerable<TimeRange>)
-            .Select(timeRange => timeRange.Time.ToString())
-            .ToArray();
-        var lastTimes = (lastAppointment.TimeRanges as IEnumerable<object>)
-            .Cast<dynamic>()
-            .Select(timeRange => timeRange.Time.ToString())
-            .ToArray();
-
-        log.Info($"new({newTimes.Length}) : old({lastTimes.Length})");
-        if (newTimes.Length != lastTimes.Length)
-        {
-            log.Info($"Count difference between new times({newTimes.Length}) and last times({lastTimes.Length}).");
-            return true;
-        }
-
-        for (var subIndex = 0; subIndex < newTimes.Length; subIndex++)
-        {
-            if (newTimes[subIndex] != lastTimes[subIndex])
-            {
-                log.Info($"{newTimes[subIndex]} is different from {lastTimes[subIndex]}.");
-                return true;
-            }
-        }
-    }
-    
-    log.Info("Same as last appointments");
-    return false;
-}
 
 public static bool AreEqual(string left, string right)
 {
