@@ -143,9 +143,9 @@ public static void Run(TimerInfo Timer,
                     && appointment.Time == lastAppointment.Time
                     && appointment.Expiration == lastAppointment.Expiration);
                 
-                log.Info($"Appointment({existingAppointment.PartitionKey}/{existingAppointment.RowKey}) changed.");
                 if (existingAppointment != null)
                 {
+                    log.Info($"Appointment({existingAppointment.PartitionKey}/{existingAppointment.RowKey}) changed.");
                     appointment.PartitionKey = existingAppointment.PartitionKey;
                     appointment.RowKey = existingAppointment.RowKey;
                     appointment.Published = existingAppointment.Published;
