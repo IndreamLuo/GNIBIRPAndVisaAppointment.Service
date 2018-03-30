@@ -12,7 +12,7 @@ public class Appointment : TableEntity
     public DateTime Published { get; set; }
     public DateTime? Appointed { get; set; }
 
-    private const char Separator = '\n';
+    private const char Separator = '^';
     public string ToEventMessage()
     {
         return string.Join(Separator.ToString(), this.Type, this.Category, this.SubCategory, this.Time, this.Expiration, this.Published, this.Appointed);
@@ -45,9 +45,26 @@ public class Appointment : TableEntity
 
 public class Subscription : TableEntity
 {
-    public string Type { get; set; }
-    public string Category { get; set; }
-    public string SubCategory { get; set; }
+    public string IRPCategory { get; set; }
+    public string IRPSubCategory { get; set; }
+    public string VisaCategory { get; set; }
+
+    private const char Separator = '^';
+    public string ToEventMessage()
+    {
+        return string.Join(Separator.ToString(), this.IRPCategory, this.IRPSubCategory, this.VisaCategory);
+    }
+
+    public static Subscription FromEventMessage(string message)
+    {
+        var splits = message.Split(Separator);
+        return new Subscription
+        {
+            IRPCategory = splits[0],
+            IRPSubCategory = splits[1],
+            VisaCategory = splits[2]
+        };
+    }
 }
 
 

@@ -17,12 +17,12 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
 
     string gcmToken = request.gcmToken;
     log.Info($"GCM Token({gcmToken})");
-    string type = request.type;
-    log.Info($"Type({type})");
-    string category = request.category;
-    log.Info($"Category({category})");
-    string subCategory = request.subCategory;
-    log.Info($"Sub Category({subCategory})");
+    string irpCategory = request.irpCategory;
+    log.Info($"IRP Category({irpCategory})");
+    string irpSubCategory = request.irpSubCategory;
+    log.Info($"IRP Sub Category({irpSubCategory})");
+    string visaCategory = request.visaCategory;
+    log.Info($"Visa Category({visaCategory})");
     
     var currentSubscription = subscriptions.Where(subscription => subscription.PartitionKey == "GCM" && subscription.RowKey == gcmToken).FirstOrDefault();
     var newSubscription = currentSubscription
@@ -32,9 +32,9 @@ public static HttpResponseMessage Run(HttpRequestMessage req,
         RowKey = gcmToken,
     };
 
-    newSubscription.Type = type;
-    newSubscription.Category = category;
-    newSubscription.SubCategory = subCategory;
+    newSubscription.IRPCategory = irpCategory;
+    newSubscription.IRPSubCategory = irpSubCategory;
+    newSubscription.VisaCategory = visaCategory;
 
     var operation = currentSubscription != null
     ? TableOperation.Replace(newSubscription)

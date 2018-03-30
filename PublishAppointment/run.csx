@@ -14,10 +14,13 @@ public static async Task Run(string eventMessage,
 
     log.Info("Event Message deserialized.");
 
-    var validSubscriptions = subscriptions
+    var validSubscriptions = appointment.Type.ToLower() == "irp"
+    ? subscriptions
         .ToArray()
-        .Where(subscription => (subscription.Category == null || subscription.Category == appointment.Category)
-            && (subscription.SubCategory == null || subscription.SubCategory == appointment.SubCategory));
+        .Where(subscription => subscription.IRPCategory == appointment.Category && subscription.IRPSubCategory == appointment.SubCategory)
+    : subscriptions
+        .ToArray()
+        .Where(subscription => subscription.VisaCategory == appointment.Category);
     
     log.Info("Sending SMS");
 
