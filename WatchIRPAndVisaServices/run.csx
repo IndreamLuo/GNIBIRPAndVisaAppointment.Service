@@ -23,7 +23,7 @@ public static void Run(TimerInfo Timer,
     log.Info($"Last Appointments:{lastAppointments.Count()}");
 
     var now = DateTime.Now;
-    var day = DateTime.Now.ToString("ddMMyyyy HH:mm:ss");
+    var day = DateTime.Now.ToString("yyyyMMdd HH:mm:ss");
     var rowKey = 0;
     var newAppointments = new List<Appointment>();
 
