@@ -68,6 +68,18 @@ public class Subscription : TableEntity
 }
 
 
+public class AppointmentStatistics : TableEntity
+{
+    public DateTime StartTime { get; set; }
+
+    public DateTime EndTime { get; set; }
+
+    public int ValidAppointments { get; set; }
+
+    public int PublishAppointments { get; set; }
+}
+
+
 public class Queries
 {
     public Queries(HttpRequestMessage req, TraceWriter log)

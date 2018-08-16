@@ -1,0 +1,25 @@
+{
+  "disabled": false,
+  "bindings": [
+    {
+      "type": "timerTrigger",
+      "name": "Timer",
+      "schedule": "0 0 0 */1 * *",
+      "direction": "in"
+    },
+    {
+      "name": "appointmentTable",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "Appointment",
+      "direction": "in"
+    },
+    {
+      "name": "appointmentStatisticsTable",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "AppointmentStatistics",
+      "direction": "out"
+    }
+  ]
+}
