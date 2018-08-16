@@ -60,7 +60,7 @@ public static void Run(
             }
             else
             {
-                IncreaseValidAppointments(appointment, ref currentStatistic);
+                IncreaseValidAppointments(nextPeriod, appointment, ref currentStatistic);
                 hasRecord = true;
             }
         }
@@ -75,7 +75,7 @@ public static void Run(
 
             if (todayAppointments.Peek().Appointed >= currentTime)
             {
-                IncreaseValidAppointments(todayAppointments.Peek(), ref currentStatistic);
+                IncreaseValidAppointments(nextPeriod, todayAppointments.Peek(), ref currentStatistic);
                 hasRecord = true;
                 currentAppointments.Add(todayAppointments.Peek());
             }
@@ -96,48 +96,63 @@ public static void Run(
     }
 }
 
-public static void IncreaseValidAppointments(Appointment appointment, ref AppointmentStatistics statistic)
+public static void IncreaseValidAppointments(DateTime nextPeriod, Appointment appointment, ref AppointmentStatistics statistic)
 {
+    var continuousTime = ((appointment.Appointed == null || appointment.Appointed > nextPeriod
+            ? nextPeriod
+            : appointment.Appointed.Value)
+        - appointment.Published)
+        .TotalSeconds;
+
     switch (appointment.Category)
     {
         case Categories.Work:
             if (appointment.SubCategory == SubCategories.New)
             {
                 statistic.ValidIRPWorkNew++;
+                statistic.TotalContinuousIRPWorkNew += continuousTime;
             }
             else
             {
                 statistic.ValidIRPWorkRenew++;
+                statistic.TotalContinuousIRPWorkRenew += continuousTime;
             }
             break;
         case Categories.Study:
             if (appointment.SubCategory == SubCategories.New)
             {
                 statistic.ValidIRPStudyNew++;
+                statistic.TotalContinuousIRPStudyNew += continuousTime;
             }
             else
             {
                 statistic.ValidIRPStudyRenew++;
+                statistic.TotalContinuousIRPStudyRenew += continuousTime;
             }
             break;
         case Categories.Other:
             if (appointment.SubCategory == SubCategories.New)
             {
                 statistic.ValidIRPOtherNew++;
+                statistic.TotalContinuousIRPOtherNew += continuousTime;
             }
             else
             {
                 statistic.ValidIRPOtherRenew++;
+                statistic.TotalContinuousIRPWorkRenew += continuousTime;
             }
             break;
         case Categories.Family:
             statistic.ValidVisaFamily++;
+            statistic.TotalContinuousVisaFamily += continuousTime;
             break;
         case Categories.Individual:
             statistic.ValidVisaIndividual++;
+            statistic.TotalContinuousVisaIndividual += continuousTime;
             break;
         case Categories.Emergency:
             statistic.ValidVisaEmergency++;
+            statistic.TotalContinuousVisaEmergency += continuousTime;
             break;
     }
 }
