@@ -74,9 +74,41 @@ public class AppointmentStatistics : TableEntity
 
     public DateTime EndTime { get; set; }
 
-    public int ValidAppointments { get; set; }
+    public int ValidIRPWorkNew { get; set; }
 
-    public int PublishAppointments { get; set; }
+    public int PublishIRPWorkNew { get; set; }
+
+    public int ValidIRPWorkRenew { get; set; }
+
+    public int PublishIRPWorkRenew { get; set; }
+
+    public int ValidIRPStudyNew { get; set; }
+
+    public int PublishIRPStudyNew { get; set; }
+
+    public int ValidIRPStudyRenew { get; set; }
+
+    public int PublishIRPStudyRenew { get; set; }
+
+    public int ValidIRPOtherNew { get; set; }
+
+    public int PublishIRPOtherNew { get; set; }
+
+    public int ValidIRPOtherRenew { get; set; }
+
+    public int PublishIRPOtherRenew { get; set; }
+
+    public int ValidVisaIndividual { get; set; }
+
+    public int PublishVisaIndividual { get; set; }
+
+    public int ValidVisaFamily { get; set; }
+
+    public int PublishVisaFamily { get; set; }
+
+    public int ValidVisaEmergency { get; set; }
+
+    public int PublishVisaEmergency { get; set; }
 }
 
 
@@ -111,4 +143,27 @@ public class Queries
             Dictionary[key] = value;
         }
     }
+}
+
+
+public class AppointmentTypes
+{
+    public const string IRP = "IRP";
+    public const string Visa = "Visa";
+}
+
+public class Categories
+{
+    public const string Work = "Work";
+    public const string Study = "Study";
+    public const string Other = "Other";
+    public const string Individual = "Individual";
+    public const string Family = "Family";
+    public const string Emergency = "Emergency";
+}
+
+public class SubCategories
+{
+    public const string New = "New";
+    public const string Renew = "Renew";
 }

@@ -50,6 +50,8 @@ public static void Run(
             EndTime = nextPeriod
         };
 
+        var hasRecord = false;
+
         foreach (var appointment in currentAppointments.ToArray())
         {
             if (appointment.Appointed < currentTime)
@@ -58,7 +60,8 @@ public static void Run(
             }
             else
             {
-                currentStatistic.ValidAppointments++;
+                IncreaseValidAppointments(appointment, ref currentStatistic);
+                hasRecord = true;
             }
         }
 
@@ -66,19 +69,21 @@ public static void Run(
         {
             if (todayAppointments.Peek().Published >= currentTime)
             {
-                currentStatistic.PublishAppointments++;
+                IncreasePublishAppointments(todayAppointments.Peek(), ref currentStatistic);
+                hasRecord = true;
             }
 
             if (todayAppointments.Peek().Appointed >= currentTime)
             {
-                currentStatistic.ValidAppointments++;
+                IncreaseValidAppointments(todayAppointments.Peek(), ref currentStatistic);
+                hasRecord = true;
                 currentAppointments.Add(todayAppointments.Peek());
             }
 
             todayAppointments.Dequeue();
         }
 
-        if (currentStatistic.PublishAppointments + currentStatistic.ValidAppointments > 0)
+        if (hasRecord)
         {
             statistics[currentTime] = currentStatistic;
         }
@@ -86,7 +91,99 @@ public static void Run(
 
     foreach (var statistic in statistics.Values)
     {
-        log.Info(string.Format("{0} - {1} - {2} - {3}", statistic.PartitionKey, statistic.RowKey, statistic.PublishAppointments, statistic.ValidAppointments));
+        log.Info($"{statistic.PartitionKey} - {statistic.RowKey}");
         appointmentStatisticsTable.Execute(TableOperation.Insert(statistic));
+    }
+}
+
+public static void IncreaseValidAppointments(Appointment appointment, ref AppointmentStatistics statistic)
+{
+    switch (appointment.Category)
+    {
+        case Categories.Work:
+            if (appointment.SubCategory == SubCategories.New)
+            {
+                statistic.ValidIRPWorkNew++;
+            }
+            else
+            {
+                statistic.ValidIRPWorkRenew++;
+            }
+            break;
+        case Categories.Study:
+            if (appointment.SubCategory == SubCategories.New)
+            {
+                statistic.ValidIRPStudyNew++;
+            }
+            else
+            {
+                statistic.ValidIRPStudyRenew++;
+            }
+            break;
+        case Categories.Other:
+            if (appointment.SubCategory == SubCategories.New)
+            {
+                statistic.ValidIRPOtherNew++;
+            }
+            else
+            {
+                statistic.ValidIRPOtherRenew++;
+            }
+            break;
+        case Categories.Family:
+            statistic.ValidVisaFamily++;
+            break;
+        case Categories.Individual:
+            statistic.ValidVisaIndividual++;
+            break;
+        case Categories.Emergency:
+            statistic.ValidVisaEmergency++;
+            break;
+    }
+}
+
+public static void IncreasePublishAppointments(Appointment appointment, ref AppointmentStatistics statistic)
+{
+    switch (appointment.Category)
+    {
+        case Categories.Work:
+            if (appointment.SubCategory == SubCategories.New)
+            {
+                statistic.PublishIRPWorkNew++;
+            }
+            else
+            {
+                statistic.PublishIRPWorkRenew++;
+            }
+            break;
+        case Categories.Study:
+            if (appointment.SubCategory == SubCategories.New)
+            {
+                statistic.PublishIRPStudyNew++;
+            }
+            else
+            {
+                statistic.PublishIRPStudyRenew++;
+            }
+            break;
+        case Categories.Other:
+            if (appointment.SubCategory == SubCategories.New)
+            {
+                statistic.PublishIRPOtherNew++;
+            }
+            else
+            {
+                statistic.PublishIRPOtherRenew++;
+            }
+            break;
+        case Categories.Family:
+            statistic.PublishVisaFamily++;
+            break;
+        case Categories.Individual:
+            statistic.PublishVisaIndividual++;
+            break;
+        case Categories.Emergency:
+            statistic.PublishVisaEmergency++;
+            break;
     }
 }
