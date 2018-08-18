@@ -14,10 +14,10 @@ public static void Run(
 {
     log.Info($"Timer triggers function.");
 
-    var today = DateTime.UtcNow.Date.AddDays(-1);
+    var today = DateTime.UtcNow.AddHours(1).Date.AddDays(-1);
     var yesterday = today.AddDays(-1);
     var tomorrow = today.AddDays(1);
-    var partitionKey = today.ToString("yyyyMMDD-24h");
+    var partitionKey = $"{today.ToString("yyyyMMdd-24")}h";
 
     var pickedAppointments = appointmentTable
         .Where(appointment =>
@@ -60,7 +60,7 @@ public static void Run(
             }
             else
             {
-                IncreaseValidAppointments(nextPeriod, appointment, ref currentStatistic);
+                IncreaseValidAppointments(currentTime, nextPeriod, appointment, ref currentStatistic);
                 hasRecord = true;
             }
         }
@@ -75,7 +75,7 @@ public static void Run(
 
             if (todayAppointments.Peek().Appointed >= currentTime)
             {
-                IncreaseValidAppointments(nextPeriod, todayAppointments.Peek(), ref currentStatistic);
+                IncreaseValidAppointments(currentTime, nextPeriod, todayAppointments.Peek(), ref currentStatistic);
                 hasRecord = true;
                 currentAppointments.Add(todayAppointments.Peek());
             }
@@ -96,12 +96,12 @@ public static void Run(
     }
 }
 
-public static void IncreaseValidAppointments(DateTime nextPeriod, Appointment appointment, ref AppointmentStatistics statistic)
+public static void IncreaseValidAppointments(DateTime currentTime, DateTime nextPeriod, Appointment appointment, ref AppointmentStatistics statistic)
 {
     var continuousTime = ((appointment.Appointed == null || appointment.Appointed > nextPeriod
             ? nextPeriod
             : appointment.Appointed.Value)
-        - appointment.Published)
+        - (appointment.Published < currentTime ? currentTime : appointment.Published))
         .TotalSeconds;
 
     switch (appointment.Category)
@@ -139,7 +139,7 @@ public static void IncreaseValidAppointments(DateTime nextPeriod, Appointment ap
             else
             {
                 statistic.ValidIRPOtherRenew++;
-                statistic.TotalContinuousIRPWorkRenew += continuousTime;
+                statistic.TotalContinuousIRPOtherRenew += continuousTime;
             }
             break;
         case Categories.Family:

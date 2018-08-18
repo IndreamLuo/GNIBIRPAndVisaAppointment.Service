@@ -22,8 +22,8 @@ public static void Run(TimerInfo Timer,
     var lastAppointments = lastAppointmentInput.ToArray();
     log.Info($"Last Appointments:{lastAppointments.Count()}");
 
-    var now = DateTime.Now;
-    var day = DateTime.Now.ToString("yyyyMMdd HH:mm:ss");
+    var now = DateTime.UtcNow.AddHours(1);//Dublin time
+    var day = now.ToString("yyyyMMdd HH:mm:ss");
     var rowKey = 0;
     var newAppointments = new List<Appointment>();
 
