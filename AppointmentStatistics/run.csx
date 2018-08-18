@@ -49,6 +49,7 @@ public static void Run(
             StartTime = currentTime,
             EndTime = nextPeriod
         };
+        var currentTimePeriods = new Dictionary<string, Queue<Tuple<DateTime, DateTime?>>>();
 
         var hasRecord = false;
 
@@ -60,7 +61,8 @@ public static void Run(
             }
             else
             {
-                IncreaseValidAppointments(currentTime, nextPeriod, appointment, ref currentStatistic);
+                IncreaseValidAppointments(appointment, ref currentStatistic);
+                PutCurrentPeriodInToQueue(appointment, ref currentTimePeriods);
                 hasRecord = true;
             }
         }
@@ -75,7 +77,8 @@ public static void Run(
 
             if (todayAppointments.Peek().Appointed >= currentTime)
             {
-                IncreaseValidAppointments(currentTime, nextPeriod, todayAppointments.Peek(), ref currentStatistic);
+                IncreaseValidAppointments(todayAppointments.Peek(), ref currentStatistic);
+                PutCurrentPeriodInToQueue(todayAppointments.Peek(), ref currentTimePeriods);
                 hasRecord = true;
                 currentAppointments.Add(todayAppointments.Peek());
             }
@@ -85,6 +88,7 @@ public static void Run(
 
         if (hasRecord)
         {
+            CalculateTotalContinuous(currentStatistic, currentTimePeriods);
             statistics[currentTime] = currentStatistic;
         }
     }
@@ -96,63 +100,112 @@ public static void Run(
     }
 }
 
-public static void IncreaseValidAppointments(DateTime currentTime, DateTime nextPeriod, Appointment appointment, ref AppointmentStatistics statistic)
-{
-    var continuousTime = ((appointment.Appointed == null || appointment.Appointed > nextPeriod
-            ? nextPeriod
-            : appointment.Appointed.Value)
-        - (appointment.Published < currentTime ? currentTime : appointment.Published))
-        .TotalSeconds;
 
+public static void PutCurrentPeriodInToQueue(Appointment appointment, ref Dictionary<string, Queue<Tuple<DateTime, DateTime?>>> currentTimePeriods)
+{
+    var currentPeriod = new Tuple<DateTime, DateTime?>(appointment.Published, appointment.Appointed);
+    var key = $"{appointment.Type}{appointment.Category}{appointment.SubCategory}";
+    Queue<Tuple<DateTime, DateTime?>> queue;
+
+    if (!currentTimePeriods.TryGetValue(key, out queue))
+    {
+        queue = new Queue<Tuple<DateTime, DateTime?>>();
+        currentTimePeriods.Add(key, queue);
+    }
+
+    queue.Enqueue(currentPeriod);
+}
+
+public static void CalculateTotalContinuous(AppointmentStatistics statistics, Dictionary<string, Queue<Tuple<DateTime, DateTime?>>> currentTimePeriods)
+{
+    statistics.TotalContinuousIRPWorkNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Work}{SubCategories.New}", statistics);
+    statistics.TotalContinuousIRPWorkRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Work}{SubCategories.Renew}", statistics);
+    statistics.TotalContinuousIRPStudyNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Study}{SubCategories.New}", statistics);
+    statistics.TotalContinuousIRPStudyRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Study}{SubCategories.Renew}", statistics);
+    statistics.TotalContinuousIRPOtherNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Other}{SubCategories.New}", statistics);
+    statistics.TotalContinuousIRPOtherRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Other}{SubCategories.Renew}", statistics);
+    statistics.TotalContinuousVisaIndividual = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Individual}", statistics);
+    statistics.TotalContinuousVisaFamily = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Family}", statistics);
+    statistics.TotalContinuousVisaEmergency = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Emergency}", statistics);
+}
+
+public static double GetCalculateTotalContinuous(Dictionary<string, Queue<Tuple<DateTime, DateTime?>>> currentTimePeriods, string key, AppointmentStatistics statistics)
+{
+    var start = statistics.StartTime;
+    var end = start;
+    var totalContinuous = 0d;
+    Queue<Tuple<DateTime, DateTime?>> queue;
+    
+    if (currentTimePeriods.TryGetValue(key, out queue))
+    {
+        while(queue.Any())
+        {
+            var period = queue.Dequeue();
+
+            if (period.Item1 > end)
+            {
+                totalContinuous += (end - start).TotalSeconds;
+                start = period.Item1;
+            }
+
+            var periodEnd = period.Item2 == null || period.Item2 > statistics.EndTime
+                ? statistics.EndTime
+                : period.Item2.Value;
+                
+            if (periodEnd > end)
+            {
+                end = periodEnd;
+            }
+        }
+        
+        totalContinuous += (end - start).TotalSeconds;
+    }
+    
+    return totalContinuous;
+}
+
+public static void IncreaseValidAppointments(Appointment appointment, ref AppointmentStatistics statistic)
+{
     switch (appointment.Category)
     {
         case Categories.Work:
             if (appointment.SubCategory == SubCategories.New)
             {
                 statistic.ValidIRPWorkNew++;
-                statistic.TotalContinuousIRPWorkNew += continuousTime;
             }
             else
             {
                 statistic.ValidIRPWorkRenew++;
-                statistic.TotalContinuousIRPWorkRenew += continuousTime;
             }
             break;
         case Categories.Study:
             if (appointment.SubCategory == SubCategories.New)
             {
                 statistic.ValidIRPStudyNew++;
-                statistic.TotalContinuousIRPStudyNew += continuousTime;
             }
             else
             {
                 statistic.ValidIRPStudyRenew++;
-                statistic.TotalContinuousIRPStudyRenew += continuousTime;
             }
             break;
         case Categories.Other:
             if (appointment.SubCategory == SubCategories.New)
             {
                 statistic.ValidIRPOtherNew++;
-                statistic.TotalContinuousIRPOtherNew += continuousTime;
             }
             else
             {
                 statistic.ValidIRPOtherRenew++;
-                statistic.TotalContinuousIRPOtherRenew += continuousTime;
             }
             break;
         case Categories.Family:
             statistic.ValidVisaFamily++;
-            statistic.TotalContinuousVisaFamily += continuousTime;
             break;
         case Categories.Individual:
             statistic.ValidVisaIndividual++;
-            statistic.TotalContinuousVisaIndividual += continuousTime;
             break;
         case Categories.Emergency:
             statistic.ValidVisaEmergency++;
-            statistic.TotalContinuousVisaEmergency += continuousTime;
             break;
     }
 }
