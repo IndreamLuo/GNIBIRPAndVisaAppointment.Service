@@ -291,7 +291,7 @@ public static Dictionary<string, int> Months = new Dictionary<string, int>
     {"May", 5},
     {"June", 6},
     {"July", 7},
-    {"Auguest", 8},
+    {"August", 8},
     {"September", 9},
     {"October", 10},
     {"November", 11},

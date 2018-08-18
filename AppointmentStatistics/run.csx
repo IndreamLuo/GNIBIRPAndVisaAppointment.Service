@@ -19,13 +19,17 @@ public static void Run(
     var tomorrow = today.AddDays(1);
     var partitionKey = $"{today.ToString("yyyyMMdd-24")}h";
 
+    log.Info($"Date{today:yyyyMMdd}");
+
     var pickedAppointments = appointmentTable
         .Where(appointment =>
-            appointment.Timestamp > yesterday
-            && appointment.Timestamp < tomorrow)
+            appointment.Published > yesterday
+            && appointment.Published < tomorrow)
         .ToList()
         .OrderBy(appointment => appointment.Published)
         .ToList();
+
+    log.Info($"{pickedAppointments.Count()} appointments picked from table.");
 
     foreach (var appointment in pickedAppointments)
     {
@@ -151,7 +155,7 @@ public static double GetCalculateTotalContinuous(Dictionary<string, Queue<Tuple<
             var periodEnd = period.Item2 == null || period.Item2 > statistics.EndTime
                 ? statistics.EndTime
                 : period.Item2.Value;
-                
+
             if (periodEnd > end)
             {
                 end = periodEnd;
