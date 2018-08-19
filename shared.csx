@@ -155,5 +155,5 @@ public class Categories
 public class SubCategories
 {
     public const string New = "New";
-    public const string Renew = "Renew";
+    public const string Renewal = "Renewal";
 }

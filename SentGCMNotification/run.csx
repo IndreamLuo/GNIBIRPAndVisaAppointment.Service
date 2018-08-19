@@ -14,7 +14,7 @@ public static async Task Run(string eventMessage, TraceWriter log)
 {
     log.Info($"Sent GCM Notification function starts for event({eventMessage}).");
 
-    var parameters = new Queue<string>(eventMessage.Split('\n'));
+    var parameters = new Queue<string>(eventMessage.Split(new [] { "\r\n", "\n" }, StringSplitOptions.None));
 
     using (var client = new HttpClient())
     {

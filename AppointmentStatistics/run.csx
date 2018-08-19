@@ -39,7 +39,7 @@ public static void Run(
     var todayAppointments = new Queue<Appointment>(pickedAppointments);
 
     var statistics = new Dictionary<DateTime, AppointmentStatistics>();
-    var currentAppointments = new HashSet<Appointment>();
+    var currentAppointments = new Queue<Appointment>();
 
     DateTime nextPeriod;
     for (var currentTime = today; currentTime < tomorrow; currentTime = nextPeriod)
@@ -55,20 +55,19 @@ public static void Run(
         };
         var currentTimePeriods = new Dictionary<string, Queue<Tuple<DateTime, DateTime?>>>();
 
-        var hasRecord = false;
+        var lastAppointments = currentAppointments;
+        currentAppointments = new Queue<Appointment>();
 
-        foreach (var appointment in currentAppointments.ToArray())
+        while (lastAppointments.Any())
         {
-            if (appointment.Appointed < currentTime)
+            if (lastAppointments.Peek().Appointed >= currentTime)
             {
-                currentAppointments.Remove(appointment);
+                IncreaseValidAppointments(lastAppointments.Peek(), ref currentStatistic);
+                PutCurrentPeriodInToQueue(lastAppointments.Peek(), ref currentTimePeriods);
+                currentAppointments.Enqueue(lastAppointments.Peek());
             }
-            else
-            {
-                IncreaseValidAppointments(appointment, ref currentStatistic);
-                PutCurrentPeriodInToQueue(appointment, ref currentTimePeriods);
-                hasRecord = true;
-            }
+
+            lastAppointments.Dequeue();
         }
 
         while (todayAppointments.Any() && todayAppointments.Peek().Published < nextPeriod)
@@ -76,21 +75,19 @@ public static void Run(
             if (todayAppointments.Peek().Published >= currentTime)
             {
                 IncreasePublishAppointments(todayAppointments.Peek(), ref currentStatistic);
-                hasRecord = true;
             }
 
             if (todayAppointments.Peek().Appointed >= currentTime)
             {
                 IncreaseValidAppointments(todayAppointments.Peek(), ref currentStatistic);
                 PutCurrentPeriodInToQueue(todayAppointments.Peek(), ref currentTimePeriods);
-                hasRecord = true;
-                currentAppointments.Add(todayAppointments.Peek());
+                currentAppointments.Enqueue(todayAppointments.Peek());
             }
 
             todayAppointments.Dequeue();
         }
 
-        if (hasRecord)
+        if (currentTimePeriods.Any())
         {
             CalculateTotalContinuous(currentStatistic, currentTimePeriods);
             statistics[currentTime] = currentStatistic;
@@ -123,11 +120,11 @@ public static void PutCurrentPeriodInToQueue(Appointment appointment, ref Dictio
 public static void CalculateTotalContinuous(AppointmentStatistics statistics, Dictionary<string, Queue<Tuple<DateTime, DateTime?>>> currentTimePeriods)
 {
     statistics.TotalContinuousIRPWorkNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Work}{SubCategories.New}", statistics);
-    statistics.TotalContinuousIRPWorkRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Work}{SubCategories.Renew}", statistics);
+    statistics.TotalContinuousIRPWorkRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Work}{SubCategories.Renewal}", statistics);
     statistics.TotalContinuousIRPStudyNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Study}{SubCategories.New}", statistics);
-    statistics.TotalContinuousIRPStudyRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Study}{SubCategories.Renew}", statistics);
+    statistics.TotalContinuousIRPStudyRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Study}{SubCategories.Renewal}", statistics);
     statistics.TotalContinuousIRPOtherNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Other}{SubCategories.New}", statistics);
-    statistics.TotalContinuousIRPOtherRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Other}{SubCategories.Renew}", statistics);
+    statistics.TotalContinuousIRPOtherRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Other}{SubCategories.Renewal}", statistics);
     statistics.TotalContinuousVisaIndividual = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Individual}", statistics);
     statistics.TotalContinuousVisaFamily = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Family}", statistics);
     statistics.TotalContinuousVisaEmergency = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Emergency}", statistics);
