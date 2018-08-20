@@ -157,3 +157,9 @@ public class SubCategories
     public const string New = "New";
     public const string Renewal = "Renewal";
 }
+
+
+public static string GetEnvironmentVariable(string name)
+{
+    return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+}

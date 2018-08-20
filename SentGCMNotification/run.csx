@@ -20,6 +20,7 @@ public static async Task Run(string eventMessage, TraceWriter log)
     {
         client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", GetEnvironmentVariable("GCMServiceKey"));
+        
         var data = new Dictionary<string, string>();
         var to = string.Empty;
 
@@ -58,10 +59,4 @@ public static async Task Run(string eventMessage, TraceWriter log)
     }
     
     log.Info("Sent GCM Downstream Message function ends.");
-}
-
-
-public static string GetEnvironmentVariable(string name)
-{
-    return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
 }

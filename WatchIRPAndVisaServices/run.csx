@@ -355,10 +355,3 @@ public static bool AreEqual(string left, string right)
     return left == right
     || (left == null || left == string.Empty) && (right == null || right == string.Empty);
 }
-
-
-
-public static string GetEnvironmentVariable(string name)
-{
-    return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
-}
