@@ -38,6 +38,11 @@ public static async Task Run(string eventMessage, TraceWriter log)
             }
         }
 
+        if (!data.ContainsKey("_timestamp"))
+        {
+            data["_timestamp"] = DateTime.UtcNow.Ticks.ToString();
+        }
+
         var dataString = JsonConvert.SerializeObject(new {
             data = data,
             to = to
