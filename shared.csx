@@ -163,3 +163,19 @@ public static string GetEnvironmentVariable(string name)
 {
     return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
 }
+
+
+public class Watch : TableEntity
+{
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
+    public double WorkNew { get; set; }
+    public double WorkRenewal { get; set; }
+    public double StudyNew { get; set; }
+    public double StudyRenewal { get; set; }
+    public double OtherNew { get; set; }
+    public double OtherRenewal { get; set; }
+    public double Individual { get; set; }
+    public double Family { get; set; }
+    public double Emergency { get; set; }
+}

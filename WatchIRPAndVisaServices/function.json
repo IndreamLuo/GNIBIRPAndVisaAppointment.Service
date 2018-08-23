@@ -34,6 +34,13 @@
       "connection": "EventHub",
       "path": "newvalidappointment",
       "direction": "out"
+    },
+    {
+      "name": "outWatchTable",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "Watch",
+      "direction": "out"
     }
   ]
 }

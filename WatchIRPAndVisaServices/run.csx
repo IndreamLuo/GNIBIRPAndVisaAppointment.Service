@@ -11,100 +11,44 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-public static void Run(TimerInfo Timer,
+public static async Task Run(TimerInfo Timer,
     TraceWriter log,
     IQueryable<Appointment> lastAppointmentInput,
     CloudTable outTable,
     CloudTable outLastTable,
-    ICollector<string> newValidAppointmentEventHubMessages)
+    ICollector<string> newValidAppointmentEventHubMessages,
+    CloudTable outWatchTable)
 {
     log.Info("Watch IRP And Visa Services function processed a request.");
+
     var lastAppointments = lastAppointmentInput.ToArray();
     log.Info($"Last Appointments:{lastAppointments.Count()}");
 
     var now = DateTime.UtcNow.AddHours(1);//Dublin time
     var day = now.ToString("yyyyMMdd HH:mm:ss");
-    var rowKey = 0;
     var newAppointments = new List<Appointment>();
 
+    var watch = new Watch
+    {
+        PartitionKey = now.ToString("yyyyMMdd"),
+        RowKey = now.ToString("HH:mm:ss"),
+        Start = now
+    };
+
     log.Info(now.ToString());
+    bool allApiSucceeded = true;
 
     using (var client = new HttpClient())
     {
         log.Info("Start loading from APIs.");
-        foreach (var api in APIs)
-        {
-            dynamic urlResult;
-            if (api.URL == null)
-            {
-                urlResult = api.Data;
-            }
-            else
-            {
-                var response = client.GetAsync(api.URL).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                    urlResult = JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result); 
-                }
-                else
-                {
-                    urlResult = new { error = response.StatusCode };
-                }
-            }
-            
-            switch (api.Type)
-            {
-                case "IRP":
-                    if (urlResult.empty != "TRUE")
-                    {
-                        foreach (var slot in urlResult.slots)
-                        {
-                            var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
-                            newAppointments.Add(new Appointment
-                            {
-                                PartitionKey = day,
-                                RowKey = rowKey++.ToString(),
-                                Type = api.Type,
-                                Category = api.Category,
-                                SubCategory = api.SubCategory,
-                                Time = time.Time,
-                                Expiration = time.Expiration,
-                                Published = now
-                            });
-                        }
-                    }
-                    break;
-                case "Visa":
-                    if (urlResult.empty != "TRUE" && urlResult.dates != null && urlResult.dates[0] != "01/01/1900")
-                    {
-                        foreach (var date in urlResult.dates)
-                        {
-                            var subUrlResponse = client.GetAsync(string.Format(VisaSubURL, date, api.Category[0], 1)).Result;
-                            var subUrlResult = JsonConvert.DeserializeObject(subUrlResponse.Content.ReadAsStringAsync().Result);
-                            if (subUrlResult.slots != null)
-                            {
-                                foreach (var slot in subUrlResult.slots)
-                                {
-                                    var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
-                                    newAppointments.Add(new Appointment
-                                    {
-                                        PartitionKey = day,
-                                        RowKey = rowKey++.ToString(),
-                                        Type = api.Type,
-                                        Category = api.Category,
-                                        SubCategory = api.SubCategory,
-                                        Time = time.Time,
-                                        Expiration = time.Expiration,
-                                        Published = now
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    break;
-            }
-        }
 
+        var requestAPITasks = APIs
+            .Select(api => RequestAPIData(log, watch, api, now, day, client, newAppointments))
+            .ToArray();
+        Task.WaitAll(requestAPITasks);
+        allApiSucceeded = requestAPITasks.Select(task => task.Result).All(result => result);
+
+        watch.End = DateTime.UtcNow.AddHours(1);
 
         log.Info("Check with last appointments.");
         log.Info("Checking count.");
@@ -182,6 +126,153 @@ public static void Run(TimerInfo Timer,
             outTable.Execute(TableOperation.Replace(appointment));
         }
     }
+
+    watch.End = DateTime.UtcNow.AddHours(1);
+    outWatchTable.Execute(TableOperation.Insert(watch));
+}
+
+
+public class Lockable<T>
+{
+    public T Value;
+}
+
+public static Lockable<int> RowKey = new Lockable<int>
+{
+    Value = 0
+};
+
+
+
+public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API api, DateTime now, string day, HttpClient client, List<Appointment> newAppointments)
+{
+    var start = DateTime.Now;
+    var noError = true;
+
+    try
+    {
+        dynamic urlResult;
+        if (api.URL == null)
+        {
+            urlResult = api.Data;
+        }
+        else
+        {
+            var response = await client.GetAsync(api.URL);
+            if (response.IsSuccessStatusCode)
+            {
+                urlResult = JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result); 
+            }
+            else
+            {
+                urlResult = new { error = response.StatusCode };
+            }
+        }
+        
+        switch (api.Type)
+        {
+            case "IRP":
+                if (urlResult.empty != "TRUE")
+                {
+                    foreach (var slot in urlResult.slots)
+                    {
+                        var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
+                        lock(RowKey)
+                        {
+                            newAppointments.Add(new Appointment
+                            {
+                                PartitionKey = day,
+                                RowKey = RowKey.Value++.ToString(),
+                                Type = api.Type,
+                                Category = api.Category,
+                                SubCategory = api.SubCategory,
+                                Time = time.Time,
+                                Expiration = time.Expiration,
+                                Published = now
+                            });
+                        }
+                    }
+                }
+                break;
+            case "Visa":
+                if (urlResult.empty != "TRUE" && urlResult.dates != null && urlResult.dates[0] != "01/01/1900")
+                {
+                    foreach (var date in urlResult.dates)
+                    {
+                        var subUrlResponse = await client.GetAsync(string.Format(VisaSubURL, date, api.Category[0], 1));
+                        var subUrlResult = JsonConvert.DeserializeObject(await subUrlResponse.Content.ReadAsStringAsync());
+                        if (subUrlResult.slots != null)
+                        {
+                            foreach (var slot in subUrlResult.slots)
+                            {
+                                var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
+                                lock (RowKey)
+                                {
+                                    newAppointments.Add(new Appointment
+                                    {
+                                        PartitionKey = day,
+                                        RowKey = RowKey.Value++.ToString(),
+                                        Type = api.Type,
+                                        Category = api.Category,
+                                        SubCategory = api.SubCategory,
+                                        Time = time.Time,
+                                        Expiration = time.Expiration,
+                                        Published = now
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+        }
+    }
+    catch (Exception ex)
+    {
+        noError = false;
+        log.Info(ex.Message);
+    }
+
+    var span = (DateTime.Now - start).TotalSeconds * (noError ? 1 : -1);
+    double _;
+    if (api.Type == AppointmentTypes.IRP)
+    {
+        if (api.Category == Categories.Work)
+        {
+            _ = api.SubCategory == SubCategories.New
+            ? watch.WorkNew = span
+            : watch.WorkRenewal = span;
+        }
+        else if (api.Category == Categories.Study)
+        {
+            _ = api.SubCategory == SubCategories.New
+            ? watch.StudyNew = span
+            : watch.StudyRenewal = span;
+        }
+        else
+        {
+            _ = api.SubCategory == SubCategories.New
+            ? watch.OtherNew = span
+            : watch.OtherRenewal = span;
+        }
+    }
+    else
+    {
+        if (api.Category == Categories.Individual)
+        {
+            watch.Individual = span;
+        }
+        else if (api.Category == Categories.Family)
+        {
+            watch.Family = span;
+        }
+        else
+        {
+            watch.Emergency = span;
+        }
+    }
+
+    return noError;
 }
 
 

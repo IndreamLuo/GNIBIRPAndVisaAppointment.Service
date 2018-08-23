@@ -26,7 +26,3 @@ public static async Task Run(string eventMessage, IAsyncCollector<SMSMessage> me
     log.Info("Sent SMS function finished.");
 }
 
-public static string GetEnvironmentVariable(string name)
-{
-    return System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
-}
