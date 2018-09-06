@@ -1,0 +1,25 @@
+{
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "get"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "name": "lastAppointments",
+      "type": "table",
+      "connection": "Storage",
+      "tableName": "LastAppointment",
+      "direction": "in"
+    }
+  ],
+  "disabled": false
+}
