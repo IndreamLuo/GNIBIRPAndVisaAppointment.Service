@@ -305,42 +305,42 @@ public static API[] APIs = new []
         Type = "IRP",
         Category = "Work",
         SubCategory = "New",
-        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?openpage&cat=Work&sbcat=All&typ=New",
+        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?readform&cat=Work&sbcat=All&typ=New",
     },
     new API
     {
         Type = "IRP",
         Category = "Work",
         SubCategory = "Renewal",
-        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?openpage&cat=Work&sbcat=All&typ=Renewal",
+        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?readform&cat=Work&sbcat=All&typ=Renewal",
     },
     new API
     {
         Type = "IRP",
         Category = "Study",
         SubCategory = "New",
-        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?openpage&cat=Study&sbcat=All&typ=New",
+        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?readform&cat=Study&sbcat=All&typ=New",
     },
     new API
     {
         Type = "IRP",
         Category = "Study",
         SubCategory = "Renewal",
-        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?openpage&cat=Study&sbcat=All&typ=Renewal",
+        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?readform&cat=Study&sbcat=All&typ=Renewal",
     },
     new API
     {
         Type = "IRP",
         Category = "Other",
         SubCategory = "New",
-        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?openpage&cat=Other&sbcat=All&typ=New",
+        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?readform&cat=Other&sbcat=All&typ=New",
     },
     new API
     {
         Type = "IRP",
         Category = "Other",
         SubCategory = "Renewal",
-        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?openpage&cat=Other&sbcat=All&typ=Renewal",
+        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?readform&cat=Other&sbcat=All&typ=Renewal",
     },
     new API
     {

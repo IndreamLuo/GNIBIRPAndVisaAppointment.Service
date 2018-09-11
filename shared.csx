@@ -179,3 +179,9 @@ public class Watch : TableEntity
     public double Family { get; set; }
     public double Emergency { get; set; }
 }
+
+public class reCaptchaToken : TableEntity
+{
+    public DateTime Time { get; set; }
+    public string Token { get; set; }
+}
