@@ -24,3 +24,4 @@ appsettings.json
 local.settings.json
 host.json
 /.vscode
+test.csx

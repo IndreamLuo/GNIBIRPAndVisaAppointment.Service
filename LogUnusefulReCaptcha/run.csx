@@ -1,4 +1,5 @@
 #load "..\shared.csx"
+#load "..\test.csx"
 
 #r "Microsoft.WindowsAzure.Storage"
 
@@ -10,6 +11,8 @@ public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, IColle
     dynamic data = await req.Content.ReadAsAsync<object>();
     string token = data.token;
     var now = DateTime.UtcNow.AddHours(1);
+
+    reCaptcha.AssertCannotBeCrossDomainUsed(token);
 
     outTable.Add(new reCaptchaToken()
     {
