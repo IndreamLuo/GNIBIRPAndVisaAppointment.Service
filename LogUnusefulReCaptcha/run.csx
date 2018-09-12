@@ -8,8 +8,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 
 public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, ICollector<reCaptchaToken> outTable, TraceWriter log)
 {
-    dynamic data = await req.Content.ReadAsAsync<object>();
-    string token = data.token;
+    string token = await req.Content.ReadAsStringAsync();
     var now = DateTime.UtcNow.AddHours(1);
 
     reCaptcha.AssertCannotBeCrossDomainUsed(token);
