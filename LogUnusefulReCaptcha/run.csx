@@ -23,4 +23,3 @@ public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, IColle
 
     return req.CreateResponse(HttpStatusCode.Created);
 }
-

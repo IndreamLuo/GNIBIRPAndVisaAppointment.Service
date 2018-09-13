@@ -15,6 +15,13 @@
     },
     {
       "type": "table",
+      "name": "inTable",
+      "tableName": "ReCaptchaToken",
+      "connection": "Storage",
+      "direction": "in"
+    },
+    {
+      "type": "table",
       "name": "outTable",
       "tableName": "ReCaptchaToken",
       "connection": "Storage",
