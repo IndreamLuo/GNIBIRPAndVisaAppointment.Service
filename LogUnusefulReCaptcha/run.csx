@@ -11,8 +11,6 @@ public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, IColle
     string token = await req.Content.ReadAsStringAsync();
     var now = DateTime.UtcNow.AddHours(1);
 
-    reCaptcha.AssertCannotBeCrossDomainUsed(token);
-
     outTable.Add(new reCaptchaToken()
     {
         PartitionKey = token,
@@ -20,6 +18,8 @@ public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, IColle
         Time = now,
         Token = token
     });
+
+    reCaptcha.AssertCannotBeCrossDomainUsed(token);
 
     return req.CreateResponse(HttpStatusCode.Created);
 }
