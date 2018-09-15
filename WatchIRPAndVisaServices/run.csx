@@ -159,10 +159,10 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
         }
         else
         {
-            var response = await client.ProxyGetAsync(api.URL);
+            var response = await Proxy.GetAsync(client, api.URL);
             if (response.IsSuccessStatusCode)
             {
-                urlResult = JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result); 
+                urlResult = JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result);
             }
             else
             {
@@ -177,6 +177,11 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
                 {
                     foreach (var slot in urlResult.slots)
                     {
+                        if (!(slot is Newtonsoft.Json.Linq.JObject) && (slot == "empty" || slot == "01/01/1900"))
+                        {
+                            break;
+                        }
+
                         var time = ConvertSlotToDateTime(log, api.Type, api.Category, api.SubCategory, (slot.time as object).ToString());
                         lock(RowKey)
                         {
@@ -200,7 +205,7 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
                 {
                     foreach (var date in urlResult.dates)
                     {
-                        var subUrlResponse = await client.ProxyGetAsync(string.Format(VisaSubURL, date, api.Category[0], 1));
+                        var subUrlResponse = await client.GetAsync(string.Format(VisaSubURL, date, api.Category[0], 1));
                         var subUrlResult = JsonConvert.DeserializeObject(await subUrlResponse.Content.ReadAsStringAsync());
                         if (subUrlResult.slots != null)
                         {
@@ -231,6 +236,7 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
     catch (Exception ex)
     {
         noError = false;
+        log.Info($"Error on: {api.Category} - {api.SubCategory}");
         log.Info(ex.Message);
     }
 
