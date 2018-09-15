@@ -1,3 +1,4 @@
+#load "..\test.csx"
 #load "..\shared.csx"
 
 #r "Newtonsoft.Json"
@@ -158,7 +159,7 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
         }
         else
         {
-            var response = await client.GetAsync(api.URL);
+            var response = await client.ProxyGetAsync(api.URL);
             if (response.IsSuccessStatusCode)
             {
                 urlResult = JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result); 
@@ -199,7 +200,7 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
                 {
                     foreach (var date in urlResult.dates)
                     {
-                        var subUrlResponse = await client.GetAsync(string.Format(VisaSubURL, date, api.Category[0], 1));
+                        var subUrlResponse = await client.ProxyGetAsync(string.Format(VisaSubURL, date, api.Category[0], 1));
                         var subUrlResult = JsonConvert.DeserializeObject(await subUrlResponse.Content.ReadAsStringAsync());
                         if (subUrlResult.slots != null)
                         {
