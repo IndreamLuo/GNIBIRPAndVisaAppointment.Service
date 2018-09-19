@@ -205,7 +205,7 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
                 {
                     foreach (var date in urlResult.dates)
                     {
-                        var subUrlResponse = await client.GetAsync(string.Format(VisaSubURL, date, api.Category[0], 1));
+                        var subUrlResponse = await Proxy.GetAsync(client, string.Format(VisaSubURL, date, api.Category[0], 1));
                         var subUrlResult = JsonConvert.DeserializeObject(await subUrlResponse.Content.ReadAsStringAsync());
                         if (subUrlResult.slots != null)
                         {
