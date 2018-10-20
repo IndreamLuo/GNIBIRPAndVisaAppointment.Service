@@ -25,7 +25,7 @@ public static async Task Run(TimerInfo Timer,
     var lastAppointments = lastAppointmentInput.ToArray();
     log.Info($"Last Appointments:{lastAppointments.Count()}");
 
-    var now = DateTime.UtcNow.AddHours(1);//Dublin time
+    var now = DateTime.Now;
     var day = now.ToString("yyyyMMdd HH:mm:ss");
     var newAppointments = new List<Appointment>();
 
