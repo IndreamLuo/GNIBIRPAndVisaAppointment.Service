@@ -72,6 +72,12 @@ public class AppointmentStatistics : TableEntity
 {
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
+    public int ValidIRPAllNew { get; set; }
+    public int PublishIRPAllNew { get; set; }
+    public double TotalContinuousIRPAllNew { get; set; }
+    public int ValidIRPAllRenew { get; set; }
+    public int PublishIRPAllRenew { get; set; }
+    public double TotalContinuousIRPAllRenew { get; set; }
     public int ValidIRPWorkNew { get; set; }
     public int PublishIRPWorkNew { get; set; }
     public double TotalContinuousIRPWorkNew { get; set; }
@@ -144,6 +150,7 @@ public class AppointmentTypes
 
 public class Categories
 {
+    public const string All = "All";
     public const string Work = "Work";
     public const string Study = "Study";
     public const string Other = "Other";
@@ -169,6 +176,8 @@ public class Watch : TableEntity
 {
     public DateTime Start { get; set; }
     public DateTime End { get; set; }
+    public double AllNew { get; set; }
+    public double AllRenewal { get; set; }
     public double WorkNew { get; set; }
     public double WorkRenewal { get; set; }
     public double StudyNew { get; set; }

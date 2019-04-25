@@ -119,12 +119,16 @@ public static void PutCurrentPeriodInToQueue(Appointment appointment, ref Dictio
 
 public static void CalculateTotalContinuous(AppointmentStatistics statistics, Dictionary<string, Queue<Tuple<DateTime, DateTime?>>> currentTimePeriods)
 {
+    statistics.TotalContinuousIRPAllNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.All}{SubCategories.New}", statistics);
+    statistics.TotalContinuousIRPAllRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.All}{SubCategories.Renewal}", statistics);
+    
     statistics.TotalContinuousIRPWorkNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Work}{SubCategories.New}", statistics);
     statistics.TotalContinuousIRPWorkRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Work}{SubCategories.Renewal}", statistics);
     statistics.TotalContinuousIRPStudyNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Study}{SubCategories.New}", statistics);
     statistics.TotalContinuousIRPStudyRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Study}{SubCategories.Renewal}", statistics);
     statistics.TotalContinuousIRPOtherNew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Other}{SubCategories.New}", statistics);
     statistics.TotalContinuousIRPOtherRenew = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.IRP}{Categories.Other}{SubCategories.Renewal}", statistics);
+    
     statistics.TotalContinuousVisaIndividual = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Individual}", statistics);
     statistics.TotalContinuousVisaFamily = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Family}", statistics);
     statistics.TotalContinuousVisaEmergency = GetCalculateTotalContinuous(currentTimePeriods, $"{AppointmentTypes.Visa}{Categories.Emergency}", statistics);
@@ -179,6 +183,16 @@ public static void IncreaseValidAppointments(Appointment appointment, ref Appoin
                 statistic.ValidIRPWorkRenew++;
             }
             break;
+        case Categories.All:
+            if (appointment.SubCategory == SubCategories.New)
+            {
+                statistic.ValidIRPAllNew++;
+            }
+            else
+            {
+                statistic.ValidIRPAllRenew++;
+            }
+            break;
         case Categories.Study:
             if (appointment.SubCategory == SubCategories.New)
             {
@@ -215,6 +229,16 @@ public static void IncreasePublishAppointments(Appointment appointment, ref Appo
 {
     switch (appointment.Category)
     {
+        case Categories.All:
+            if (appointment.SubCategory == SubCategories.New)
+            {
+                statistic.PublishIRPAllNew++;
+            }
+            else
+            {
+                statistic.PublishIRPAllRenew++;
+            }
+            break;
         case Categories.Work:
             if (appointment.SubCategory == SubCategories.New)
             {

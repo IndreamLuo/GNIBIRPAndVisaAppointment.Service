@@ -150,6 +150,8 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
     var start = DateTime.Now;
     var noError = true;
 
+    log.Info($"Requesting {api.Category}-{api.SubCategory}");
+
     try
     {
         dynamic urlResult;
@@ -244,7 +246,13 @@ public static async Task<bool> RequestAPIData(TraceWriter log, Watch watch, API 
     double _;
     if (api.Type == AppointmentTypes.IRP)
     {
-        if (api.Category == Categories.Work)
+        if (api.Category == Categories.All)
+        {
+            _ = api.SubCategory == SubCategories.New
+            ? watch.AllNew = span
+            : watch.AllRenewal = span;
+        }
+        else if (api.Category == Categories.Work)
         {
             _ = api.SubCategory == SubCategories.New
             ? watch.WorkNew = span
@@ -307,6 +315,20 @@ public class API
 public static string VisaSubURL = "https://reentryvisa.inis.gov.ie/website/INISOA/IOA.nsf/(getApps4DT)?openagent&dt={0}&type={1}&num={2}";
 public static API[] APIs = new []
 {
+    new API
+    {
+        Type = "IRP",
+        Category = "All",
+        SubCategory = "New",
+        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?readform&cat=All&sbcat=All&typ=New",
+    },
+    new API
+    {
+        Type = "IRP",
+        Category = "All",
+        SubCategory = "Renewal",
+        URL = "https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?readform&cat=All&sbcat=All&typ=Renewal",
+    },
     new API
     {
         Type = "IRP",
